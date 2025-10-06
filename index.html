@@ -2,55 +2,158 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Chattr XP • Neon Preview</title>
 <style>
-  :root {
-    --bg:#111216;
-    --primary:#0EA5E9;
-    --secondary:#EC4899;
-    --text:#F8FAFC;
-    --surface:#1E1F24;
-    --success:#10B981;
-    --warning:#F59E0B;
+  :root { --bg:#111216; --surface:#1E1F24; --text:#F8FAFC; --primary:#0EA5E9; --secondary:#EC4899; --success:#10B981; --danger:#ef4444; --muted:#94a3b8; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  .wrap{min-height:100dvh;display:flex;align-items:center;justify-content:center}
+  .card{width:min(720px,92vw);background:var(--surface);border-radius:20px;padding:20px 18px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  h1,h2,h3{margin:8px 0}.center{text-align:center}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .btn{background:var(--primary);color:#fff;border:0;padding:12px 16px;border-radius:12px;cursor:pointer;font-weight:600;transition:transform .16s}
+  .btn:hover{transform:translateY(-1px)} .ghost{background:transparent;border:1px solid var(--muted);color:var(--text)}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+  .answer{padding:14px;background:#20232a;border-radius:14px;cursor:pointer;user-select:none;transition:transform .12s,background .12s}
+  .answer:hover{transform:scale(1.02);background:#262a33}.correct{background:var(--success)!important}.wrong{background:var(--danger)!important}
+  .bar{height:12px;width:100%;background:#2a2e36;border-radius:8px;overflow:hidden;margin:8px 0 4px}
+  .bar>div{height:100%;width:0%;background:linear-gradient(90deg,var(--secondary),var(--primary));transition:width .28s}
+  .meta{color:var(--muted);font-size:14px}.emoji{font-size:38px}.avatars span{font-size:32px;padding:6px 10px;border-radius:10px;cursor:pointer}
+  .avatars span.sel{outline:2px solid var(--secondary)} .hide{display:none!important} .spacer{height:8px}
+  .confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden}.piece{position:absolute;font-size:22px;animation:fall 1.2s linear forwards}
+  @keyframes fall{to{transform:translateY(100vh) rotate(360deg);opacity:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card" id="screen-start">
+    <div class="center">
+      <div class="emoji">✨</div>
+      <h1>Chattr XP</h1>
+      <p class="meta">Practice real-world social moves. Earn XP. Unlock codes.</p>
+      <h3>Pick an avatar</h3>
+      <div class="row avatars" id="avatars">
+        <span>😎✨</span><span>🎧⚡</span><span>🏀💥</span><span>🎮⭐</span><span>📚💡</span><span>🧠🔓</span>
+      </div>
+      <div class="spacer"></div>
+      <button class="btn" id="btn-start">Start</button>
+    </div>
+  </div>
+
+  <div class="card hide" id="screen-quiz">
+    <div class="row" style="justify-content:space-between">
+      <div><span id="avatar" class="emoji">😎✨</span></div>
+      <div class="meta">🔥 Streak: <b id="streak">1</b></div>
+    </div>
+    <div class="bar"><div id="xpfill"></div></div>
+    <div class="meta"><span id="xptext">XP 0</span> · Level <span id="level">1</span></div>
+
+    <h3 id="qtext" style="margin-top:10px"></h3>
+    <div class="grid" id="answers"></div>
+    <div class="meta" id="feedback"></div>
+    <div class="row" style="justify-content:space-between;margin-top:8px">
+      <button class="btn ghost" id="btn-exit">Exit</button>
+      <button class="btn" id="btn-next" disabled>Next</button>
+    </div>
+  </div>
+
+  <div class="card hide" id="screen-cooldown">
+    <div class="center">
+      <h2>Nice work today 🔥</h2>
+      <p class="meta">Your brain did reps. Come back tomorrow for more XP.</p>
+      <div class="spacer"></div>
+      <button class="btn" id="btn-reward">View Reward</button>
+      <button class="btn ghost" id="btn-profile">Profile</button>
+    </div>
+  </div>
+
+  <div class="card hide" id="screen-reward">
+    <div class="center">
+      <h2>Rewards</h2>
+      <div style="font-size:64px">✉️</div>
+      <p class="meta">Tap to reveal a sample code</p>
+      <button class="btn" id="btn-open">Open ✉️</button>
+      <div id="codebox" class="hide" style="margin-top:10px">
+        <div style="font-size:36px">🧩</div>
+        <h3>TEST-1234-ABCD</h3>
+        <p class="meta">Use this code in the provider’s redeem page.</p>
+        <button class="btn ghost" id="btn-back-to-quiz">Back</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card hide" id="screen-profile">
+    <div class="center">
+      <h2>Profile</h2>
+      <div class="emoji" id="pAvatar">😎✨</div>
+      <p class="meta">Theme: Neon · Sounds: Off</p>
+      <button class="btn" id="btn-play-again">Play Again</button>
+    </div>
+  </div>
+</div>
+
+<div id="confetti" class="confetti"></div>
+
+<script>
+  // Demo questions
+  const QUESTIONS = [
+    {q:"A friend texts during homework time. What’s your move?", a:["Finish this section, then reply","Reply now, it’s quick","Ignore for hours","Send a meme instead"], c:0},
+    {q:"You join a new group chat. Best first message?", a:["Hey, I’m new here! Nice to meet you all.","Spam emojis","Drop a hot take","Ask everyone’s full names"], c:0},
+    {q:"A classmate misreads your joke and gets upset. Best fix?", a:["Explain and apologize","Double down","Blame autocorrect","Leave the chat"], c:0},
+    {q:"Someone cuts you off while speaking. What’s best?", a:["Wait, then calmly finish","Interrupt back","Stay silent","Walk out"], c:0},
+    {q:"You forgot a friend’s birthday. What now?", a:["Apologize and make it up","Pretend you remembered","Blame your calendar","Ignore it"], c:0}
+  ];
+
+  const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+  const scr=id=>{['#screen-start','#screen-quiz','#screen-cooldown','#screen-reward','#screen-profile'].forEach(sel=>$(sel).classList.add('hide')); $(id).classList.remove('hide');};
+
+  // Simple local state so it "sticks" between refreshes
+  let S = JSON.parse(localStorage.getItem('cxp')||'{}');
+  if(!S.init){ S={init:true, avatar:'😎✨', xp:0, level:1, streak:0, completed:{}}; localStorage.setItem('cxp', JSON.stringify(S)); }
+
+  // Avatar picker
+  $$('#avatars span').forEach(sp=>{
+    if(sp.textContent===S.avatar) sp.classList.add('sel');
+    sp.onclick=()=>{$$('#avatars span').forEach(x=>x.classList.remove('sel')); sp.classList.add('sel'); S.avatar=sp.textContent; save();};
+  });
+  $('#btn-start').onclick=()=>{ $('#avatar').textContent=S.avatar; $('#pAvatar').textContent=S.avatar; start(); };
+  $('#btn-exit').onclick=()=>scr('#screen-start');
+  $('#btn-next').onclick=()=>next();
+  $('#btn-reward').onclick=()=>scr('#screen-reward');
+  $('#btn-profile').onclick=()=>scr('#screen-profile');
+  $('#btn-open').onclick=()=>$('#codebox').classList.remove('hide');
+  $('#btn-back-to-quiz').onclick=()=>scr('#screen-quiz');
+  $('#btn-play-again').onclick=()=>start();
+
+  let idx = -1;
+  function start(){ scr('#screen-quiz'); renderBars(); next(true); }
+  function next(first=false){
+    $('#btn-next').disabled=true;
+    const i = QUESTIONS.findIndex((q,ii)=>!S.completed[ii]);
+    if(i===-1){ scr('#screen-cooldown'); return; }
+    idx=i; const q=QUESTIONS[idx];
+    $('#qtext').textContent=q.q; const box=$('#answers'); box.innerHTML='';
+    q.a.forEach((t,i)=>{
+      const d=document.createElement('div'); d.className='answer'; d.textContent=t;
+      d.onclick=()=>choose(i,d); box.appendChild(d);
+    });
+    $('#feedback').textContent='';
+    if(!first) window.scrollTo({top:0,behavior:'smooth'});
   }
-  body {
-    font-family: 'Segoe UI', Helvetica, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    margin:0; padding:0;
-    display:flex; flex-direction:column; align-items:center;
-    justify-content:center;
-    height:100vh;
-    overflow:hidden;
+  function choose(i,el){
+    const q=QUESTIONS[idx]; $$('.answer').forEach(a=>a.onclick=null);
+    if(i===q.c){ el.classList.add('correct'); S.completed[idx]=true; S.streak=(S.streak||0)+1; award(); $('#feedback').textContent='✅ Correct! +XP'; confetti(); }
+    else{ el.classList.add('wrong'); S.streak=0; $('#feedback').textContent='❌ Not quite.'; }
+    save(); renderBars(); setTimeout(()=>{$('#btn-next').disabled=false;},650);
   }
-  h1,h2{margin:0.4em 0;}
-  button {
-    background: var(--primary);
-    border:none;
-    color:white;
-    font-size:1.1rem;
-    padding:0.7em 1.4em;
-    border-radius:12px;
-    cursor:pointer;
-    margin-top:1em;
-    transition:transform .15s;
+  function award(){ S.xp=(S.xp||0)+10; S.level=1+Math.floor((S.xp||0)/100); }
+  function renderBars(){ $('#streak').textContent=S.streak||0; $('#xptext').textContent=`XP ${S.xp||0}`; $('#level').textContent=S.level||1; $('#xpfill').style.width=((S.xp%100))+'%'; }
+  function save(){ localStorage.setItem('cxp', JSON.stringify(S)); }
+  function confetti(){
+    const c=$('#confetti');
+    for(let i=0;i<22;i++){ const s=document.createElement('span'); s.className='piece'; s.textContent=['✨','💫','🌟','🎉','⭐'][Math.floor(Math.random()*5)];
+      s.style.left=(Math.random()*100)+'%'; s.style.animationDelay=(Math.random()*0.25)+'s'; c.appendChild(s); setTimeout(()=>s.remove(),1400); }
   }
-  button:hover {transform:scale(1.05);}
-  .screen{display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;width:100%;height:100%;}
-  .active{display:flex;}
-  .question{font-size:1.3rem;margin:0.5em 0 1em;max-width:90%;}
-  .answers{display:grid;grid-template-columns:1fr 1fr;gap:0.8em;width:80%;}
-  .answer{
-    background:var(--surface);
-    border-radius:14px;
-    padding:0.8em;
-    cursor:pointer;
-    transition:all .15s;
-    user-select:none;
-  }
-  .answer:hover{background:var(--secondary);transform:scale(1.05);}
-  .correct{background:var(--success)!important;}
-  .wrong{background:#ef4444!important;}
-  .progress-bar{width:80%;height:12px;background:#333;border-radius:6px;overflow:hidden;margin:1em 0;}
-  .progress{height:100%;background:var(--secondary);width:0%;tr
+</script>
+</body>
+</html>
