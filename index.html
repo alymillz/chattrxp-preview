@@ -87,7 +87,10 @@
       <h2>Profile</h2>
       <div class="emoji" id="pAvatar">😎✨</div>
       <p class="meta">Theme: Neon · Sounds: Off</p>
-      <button class="btn" id="btn-play-again">Play Again</button>
+      <div class="row center" style="justify-content:center;gap:8px">
+        <button class="btn" id="btn-play-again">Play Again</button>
+        <button class="btn ghost" id="btn-reset">Reset Progress</button>
+      </div>
     </div>
   </div>
 </div>
@@ -95,64 +98,214 @@
 <div id="confetti" class="confetti"></div>
 
 <script>
-  // Demo questions
+  // --- Dev Mode toggle: add ?dev=1 to URL for unlimited looped testing ---
+  const DEV_MODE = location.search.includes('dev=1');
+
+  // Questions with per-answer explanations (e = explanations[])
   const QUESTIONS = [
-    {q:"A friend texts during homework time. What’s your move?", a:["Finish this section, then reply","Reply now, it’s quick","Ignore for hours","Send a meme instead"], c:0},
-    {q:"You join a new group chat. Best first message?", a:["Hey, I’m new here! Nice to meet you all.","Spam emojis","Drop a hot take","Ask everyone’s full names"], c:0},
-    {q:"A classmate misreads your joke and gets upset. Best fix?", a:["Explain and apologize","Double down","Blame autocorrect","Leave the chat"], c:0},
-    {q:"Someone cuts you off while speaking. What’s best?", a:["Wait, then calmly finish","Interrupt back","Stay silent","Walk out"], c:0},
-    {q:"You forgot a friend’s birthday. What now?", a:["Apologize and make it up","Pretend you remembered","Blame your calendar","Ignore it"], c:0}
+    {
+      q: "A friend texts during homework time. What’s your move?",
+      a: [
+        "Finish this section, then reply",
+        "Reply now, it’s quick",
+        "Ignore for hours",
+        "Send a meme instead"
+      ],
+      e: [
+        "You keep focus and still respond soon. Your brain switches tasks less, so you finish faster and sound calmer.",
+        "Looks harmless, but it breaks focus. One quick reply becomes a thread and homework takes longer.",
+        "They may feel ignored or worry you’re upset. Silence creates drama you don’t need.",
+        "Off-topic and delays both tasks. Sends mixed signals and can seem dismissive."
+      ],
+      c: 0
+    },
+    {
+      q: "You join a new group chat. Best first message?",
+      a: [
+        "Hey, I’m new here! Nice to meet you all.",
+        "Spam emojis",
+        "Drop a hot take",
+        "Ask everyone’s full names"
+      ],
+      e: [
+        "Friendly + low-pressure. You signal respect and invite normal conversation.",
+        "Looks chaotic and attention-seeking; people may mute you immediately.",
+        "High-conflict starts make a bad first impression and can split the group.",
+        "Feels like an interrogation. Learn names naturally as people talk."
+      ],
+      c: 0
+    },
+    {
+      q: "A classmate misreads your joke and gets upset. Best fix?",
+      a: [
+        "Explain and apologize",
+        "Double down",
+        "Blame autocorrect",
+        "Leave the chat"
+      ],
+      e: [
+        "You repair trust quickly. Owning it shows maturity and keeps the friendship.",
+        "Escalates hurt feelings and makes you look mean on purpose.",
+        "Dodges responsibility; they’ll feel you aren’t sincere.",
+        "Looks like you don’t care and leaves the problem unsolved."
+      ],
+      c: 0
+    },
+    {
+      q: "Someone cuts you off while speaking. What’s best?",
+      a: [
+        "Wait, then calmly finish",
+        "Interrupt back",
+        "Stay silent",
+        "Walk out"
+      ],
+      e: [
+        "You set a respectful boundary and model good turn-taking.",
+        "Turns it into a battle; everyone stops listening and tension rises.",
+        "Your point gets lost and you teach people it’s okay to talk over you.",
+        "Escalates the situation and can look disrespectful."
+      ],
+      c: 0
+    },
+    {
+      q: "You forgot a friend’s birthday. What now?",
+      a: [
+        "Apologize and make it up",
+        "Pretend you remembered",
+        "Blame your calendar",
+        "Ignore it"
+      ],
+      e: [
+        "Honest + effort = trust repair. Small plan > long excuse.",
+        "They’ll likely find out; trust drops more than if you were honest.",
+        "Excuses feel weak and they may think you don’t value them.",
+        "Signals they don’t matter to you, which can end friendships."
+      ],
+      c: 0
+    }
   ];
 
-  const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
-  const scr=id=>{['#screen-start','#screen-quiz','#screen-cooldown','#screen-reward','#screen-profile'].forEach(sel=>$(sel).classList.add('hide')); $(id).classList.remove('hide');};
+  const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+  const scr = id => {
+    ['#screen-start','#screen-quiz','#screen-cooldown','#screen-reward','#screen-profile']
+      .forEach(sel => $(sel).classList.add('hide'));
+    $(id).classList.remove('hide');
+  };
 
-  // Simple local state so it "sticks" between refreshes
+  // Persisted state
   let S = JSON.parse(localStorage.getItem('cxp')||'{}');
-  if(!S.init){ S={init:true, avatar:'😎✨', xp:0, level:1, streak:0, completed:{}}; localStorage.setItem('cxp', JSON.stringify(S)); }
+  if (!S.init) { S = { init:true, avatar:'😎✨', xp:0, level:1, streak:0, completed:{} }; save(); }
+
+  // Re-ask missed questions later
+  const RETRY_GAP = 2;              // how many questions later to retry a miss
+  let retryQueue = [];              // { idx, when }
+  let servedCount = 0;
+  let idx = -1;
 
   // Avatar picker
   $$('#avatars span').forEach(sp=>{
-    if(sp.textContent===S.avatar) sp.classList.add('sel');
-    sp.onclick=()=>{$$('#avatars span').forEach(x=>x.classList.remove('sel')); sp.classList.add('sel'); S.avatar=sp.textContent; save();};
+    if (sp.textContent === S.avatar) sp.classList.add('sel');
+    sp.onclick = () => { $$('#avatars span').forEach(x=>x.classList.remove('sel')); sp.classList.add('sel'); S.avatar = sp.textContent; save(); };
   });
-  $('#btn-start').onclick=()=>{ $('#avatar').textContent=S.avatar; $('#pAvatar').textContent=S.avatar; start(); };
-  $('#btn-exit').onclick=()=>scr('#screen-start');
-  $('#btn-next').onclick=()=>next();
-  $('#btn-reward').onclick=()=>scr('#screen-reward');
-  $('#btn-profile').onclick=()=>scr('#screen-profile');
-  $('#btn-open').onclick=()=>$('#codebox').classList.remove('hide');
-  $('#btn-back-to-quiz').onclick=()=>scr('#screen-quiz');
-  $('#btn-play-again').onclick=()=>start();
 
-  let idx = -1;
-  function start(){ scr('#screen-quiz'); renderBars(); next(true); }
+  // Buttons
+  $('#btn-start').onclick   = () => { $('#avatar').textContent=S.avatar; $('#pAvatar').textContent=S.avatar; start(); };
+  $('#btn-exit').onclick    = () => scr('#screen-start');
+  $('#btn-next').onclick    = () => next();
+  $('#btn-reward').onclick  = () => scr('#screen-reward');
+  $('#btn-profile').onclick = () => scr('#screen-profile');
+  $('#btn-open').onclick    = () => $('#codebox').classList.remove('hide');
+  $('#btn-back-to-quiz').onclick = () => scr('#screen-quiz');
+  $('#btn-play-again').onclick   = () => start();
+  $('#btn-reset').onclick = () => {
+    S = { init:true, avatar:S.avatar || '😎✨', xp:0, level:1, streak:0, completed:{} };
+    save();
+    alert('Progress reset. You can replay from the start.');
+  };
+
+  function start(){ scr('#screen-quiz'); renderBars(); servedCount = 0; retryQueue = []; next(true); }
+
+  function pickNextIndex(){
+    // 1) Ready retry?
+    const ready = retryQueue.findIndex(it => it.when <= servedCount && !S.completed[it.idx]);
+    if (ready !== -1) return retryQueue.splice(ready,1)[0].idx;
+    // 2) First unseen (skip current to avoid immediate repeat)
+    const i = QUESTIONS.findIndex((q,ii)=>!S.completed[ii] && ii!==idx);
+    if (i !== -1) return i;
+    // 3) Anything pending in retryQueue?
+    if (retryQueue.length) return retryQueue[0].idx;
+    // 4) Nothing left
+    return -1;
+  }
+
   function next(first=false){
-    $('#btn-next').disabled=true;
-    const i = QUESTIONS.findIndex((q,ii)=>!S.completed[ii]);
-    if(i===-1){ scr('#screen-cooldown'); return; }
-    idx=i; const q=QUESTIONS[idx];
-    $('#qtext').textContent=q.q; const box=$('#answers'); box.innerHTML='';
+    $('#btn-next').disabled = true;
+    const i = pickNextIndex();
+    if (i === -1) {
+      if (DEV_MODE) {
+        // Loop forever in Dev Mode
+        S.completed = {}; servedCount = 0; retryQueue = [];
+        save();
+        return next();
+      }
+      scr('#screen-cooldown'); 
+      return;
+    }
+    idx = i; servedCount++;
+
+    const q = QUESTIONS[idx];
+    $('#qtext').textContent = q.q;
+    const box = $('#answers'); box.innerHTML = '';
     q.a.forEach((t,i)=>{
-      const d=document.createElement('div'); d.className='answer'; d.textContent=t;
-      d.onclick=()=>choose(i,d); box.appendChild(d);
+      const d = document.createElement('div');
+      d.className = 'answer';
+      d.textContent = t;
+      d.onclick = () => choose(i, d);
+      box.appendChild(d);
     });
-    $('#feedback').textContent='';
-    if(!first) window.scrollTo({top:0,behavior:'smooth'});
+    $('#feedback').textContent = '';
+    if (!first) window.scrollTo({top:0, behavior:'smooth'});
   }
-  function choose(i,el){
-    const q=QUESTIONS[idx]; $$('.answer').forEach(a=>a.onclick=null);
-    if(i===q.c){ el.classList.add('correct'); S.completed[idx]=true; S.streak=(S.streak||0)+1; award(); $('#feedback').textContent='✅ Correct! +XP'; confetti(); }
-    else{ el.classList.add('wrong'); S.streak=0; $('#feedback').textContent='❌ Not quite.'; }
-    save(); renderBars(); setTimeout(()=>{$('#btn-next').disabled=false;},650);
+
+  function choose(choiceIndex, el){
+    const q = QUESTIONS[idx];
+    $$('.answer').forEach(a=>a.onclick=null);
+    const correct = (choiceIndex === q.c);
+
+    // Explanation text (per answer)
+    const reason = q.e?.[choiceIndex] || (correct ? "Good call." : "Not ideal—let's try a different approach next time.");
+
+    if (correct){
+      el.classList.add('correct');
+      S.completed[idx] = true;
+      S.streak = (S.streak||0) + 1;
+      award();
+      $('#feedback').textContent = `✅ ${reason}`;
+      confetti();
+    } else {
+      el.classList.add('wrong');
+      S.streak = 0;
+      retryQueue.push({ idx, when: servedCount + RETRY_GAP }); // queue for later
+      const better = q.a[q.c];
+      $('#feedback').innerHTML = `❌ ${reason} <br><span class="meta">Try next time: “${better}”.</span>`;
+    }
+
+    save(); renderBars();
+    setTimeout(()=>{ $('#btn-next').disabled=false; next(); }, 900); // auto-advance
   }
-  function award(){ S.xp=(S.xp||0)+10; S.level=1+Math.floor((S.xp||0)/100); }
+
+  function award(){ S.xp = (S.xp||0) + 10; S.level = 1 + Math.floor((S.xp||0)/100); }
   function renderBars(){ $('#streak').textContent=S.streak||0; $('#xptext').textContent=`XP ${S.xp||0}`; $('#level').textContent=S.level||1; $('#xpfill').style.width=((S.xp%100))+'%'; }
   function save(){ localStorage.setItem('cxp', JSON.stringify(S)); }
+
   function confetti(){
-    const c=$('#confetti');
-    for(let i=0;i<22;i++){ const s=document.createElement('span'); s.className='piece'; s.textContent=['✨','💫','🌟','🎉','⭐'][Math.floor(Math.random()*5)];
-      s.style.left=(Math.random()*100)+'%'; s.style.animationDelay=(Math.random()*0.25)+'s'; c.appendChild(s); setTimeout(()=>s.remove(),1400); }
+    const c=document.getElementById('confetti');
+    for(let i=0;i<22;i++){
+      const s=document.createElement('span'); s.className='piece';
+      s.textContent=['✨','💫','🌟','🎉','⭐'][Math.floor(Math.random()*5)];
+      s.style.left=(Math.random()*100)+'%'; s.style.animationDelay=(Math.random()*0.25)+'s';
+      c.appendChild(s); setTimeout(()=>s.remove(),1400);
+    }
   }
 </script>
 </body>
