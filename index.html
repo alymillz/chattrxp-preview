@@ -12,6 +12,7 @@
   .card{width:min(720px,92vw);background:var(--surface);border-radius:20px;padding:20px 18px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
   h1,h2,h3{margin:8px 0}.center{text-align:center}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
   .btn{background:var(--primary);color:#fff;border:0;padding:12px 16px;border-radius:12px;cursor:pointer;font-weight:600;transition:transform .16s}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
   .btn:hover{transform:translateY(-1px)} .ghost{background:transparent;border:1px solid var(--muted);color:var(--text)}
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
   .answer{padding:14px;background:#20232a;border-radius:14px;cursor:pointer;user-select:none;transition:transform .12s,background .12s}
@@ -43,15 +44,15 @@
   <div class="card hide" id="screen-quiz">
     <div class="row" style="justify-content:space-between">
       <div><span id="avatar" class="emoji">😎✨</span></div>
-      <div class="meta">🔥 Streak: <b id="streak">1</b></div>
+      <div class="meta">🔥 Streak: <b id="streak">0</b></div>
     </div>
     <div class="bar"><div id="xpfill"></div></div>
     <div class="meta"><span id="xptext">XP 0</span> · Level <span id="level">1</span></div>
 
     <h3 id="qtext" style="margin-top:10px"></h3>
     <div class="grid" id="answers"></div>
-    <div class="meta" id="feedback"></div>
-    <div class="row" style="justify-content:space-between;margin-top:8px">
+    <div class="meta" id="feedback" style="margin-top:6px"></div>
+    <div class="row" style="justify-content:space-between;margin-top:12px">
       <button class="btn ghost" id="btn-exit">Exit</button>
       <button class="btn" id="btn-next" disabled>Next</button>
     </div>
@@ -98,19 +99,14 @@
 <div id="confetti" class="confetti"></div>
 
 <script>
-  // --- Dev Mode toggle: add ?dev=1 to URL for unlimited looped testing ---
+  // --- Dev Mode: add ?dev=1 to the URL ---
   const DEV_MODE = location.search.includes('dev=1');
 
-  // Questions with per-answer explanations (e = explanations[])
+  // Questions with per-answer explanations
   const QUESTIONS = [
     {
       q: "A friend texts during homework time. What’s your move?",
-      a: [
-        "Finish this section, then reply",
-        "Reply now, it’s quick",
-        "Ignore for hours",
-        "Send a meme instead"
-      ],
+      a: ["Finish this section, then reply","Reply now, it’s quick","Ignore for hours","Send a meme instead"],
       e: [
         "You keep focus and still respond soon. Your brain switches tasks less, so you finish faster and sound calmer.",
         "Looks harmless, but it breaks focus. One quick reply becomes a thread and homework takes longer.",
@@ -121,12 +117,7 @@
     },
     {
       q: "You join a new group chat. Best first message?",
-      a: [
-        "Hey, I’m new here! Nice to meet you all.",
-        "Spam emojis",
-        "Drop a hot take",
-        "Ask everyone’s full names"
-      ],
+      a: ["Hey, I’m new here! Nice to meet you all.","Spam emojis","Drop a hot take","Ask everyone’s full names"],
       e: [
         "Friendly + low-pressure. You signal respect and invite normal conversation.",
         "Looks chaotic and attention-seeking; people may mute you immediately.",
@@ -137,12 +128,7 @@
     },
     {
       q: "A classmate misreads your joke and gets upset. Best fix?",
-      a: [
-        "Explain and apologize",
-        "Double down",
-        "Blame autocorrect",
-        "Leave the chat"
-      ],
+      a: ["Explain and apologize","Double down","Blame autocorrect","Leave the chat"],
       e: [
         "You repair trust quickly. Owning it shows maturity and keeps the friendship.",
         "Escalates hurt feelings and makes you look mean on purpose.",
@@ -153,12 +139,7 @@
     },
     {
       q: "Someone cuts you off while speaking. What’s best?",
-      a: [
-        "Wait, then calmly finish",
-        "Interrupt back",
-        "Stay silent",
-        "Walk out"
-      ],
+      a: ["Wait, then calmly finish","Interrupt back","Stay silent","Walk out"],
       e: [
         "You set a respectful boundary and model good turn-taking.",
         "Turns it into a battle; everyone stops listening and tension rises.",
@@ -169,12 +150,7 @@
     },
     {
       q: "You forgot a friend’s birthday. What now?",
-      a: [
-        "Apologize and make it up",
-        "Pretend you remembered",
-        "Blame your calendar",
-        "Ignore it"
-      ],
+      a: ["Apologize and make it up","Pretend you remembered","Blame your calendar","Ignore it"],
       e: [
         "Honest + effort = trust repair. Small plan > long excuse.",
         "They’ll likely find out; trust drops more than if you were honest.",
@@ -186,21 +162,18 @@
   ];
 
   const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
-  const scr = id => {
-    ['#screen-start','#screen-quiz','#screen-cooldown','#screen-reward','#screen-profile']
-      .forEach(sel => $(sel).classList.add('hide'));
-    $(id).classList.remove('hide');
-  };
+  const scr = id => { ['#screen-start','#screen-quiz','#screen-cooldown','#screen-reward','#screen-profile'].forEach(sel => $(sel).classList.add('hide')); $(id).classList.remove('hide'); };
 
   // Persisted state
   let S = JSON.parse(localStorage.getItem('cxp')||'{}');
   if (!S.init) { S = { init:true, avatar:'😎✨', xp:0, level:1, streak:0, completed:{} }; save(); }
 
-  // Re-ask missed questions later
-  const RETRY_GAP = 2;              // how many questions later to retry a miss
-  let retryQueue = [];              // { idx, when }
+  // Retry logic
+  const RETRY_GAP = 2;        // how many questions later to retry a miss
+  let retryQueue = [];        // { idx, when }
   let servedCount = 0;
   let idx = -1;
+  let answeredThisQuestion = false;
 
   // Avatar picker
   $$('#avatars span').forEach(sp=>{
@@ -209,21 +182,34 @@
   });
 
   // Buttons
-  $('#btn-start').onclick   = () => { $('#avatar').textContent=S.avatar; $('#pAvatar').textContent=S.avatar; start(); };
+  $('#btn-start').onclick   = () => { $('#avatar').textContent=S.avatar; $('#pAvatar').textContent=S.avatar; startSession(); };
   $('#btn-exit').onclick    = () => scr('#screen-start');
   $('#btn-next').onclick    = () => next();
   $('#btn-reward').onclick  = () => scr('#screen-reward');
   $('#btn-profile').onclick = () => scr('#screen-profile');
   $('#btn-open').onclick    = () => $('#codebox').classList.remove('hide');
   $('#btn-back-to-quiz').onclick = () => scr('#screen-quiz');
-  $('#btn-play-again').onclick   = () => start();
-  $('#btn-reset').onclick = () => {
-    S = { init:true, avatar:S.avatar || '😎✨', xp:0, level:1, streak:0, completed:{} };
-    save();
-    alert('Progress reset. You can replay from the start.');
-  };
+  $('#btn-play-again').onclick   = () => startSession();
+  $('#btn-reset').onclick = () => { resetProgress(true); alert('Progress reset. You can replay from the start.'); };
 
-  function start(){ scr('#screen-quiz'); renderBars(); servedCount = 0; retryQueue = []; next(true); }
+  function startSession(){
+    // In DEV_MODE, each session starts fresh at 0 points
+    if (DEV_MODE) {
+      S = { init:true, avatar:S.avatar || '😎✨', xp:0, level:1, streak:0, completed:{} };
+      save();
+    }
+    scr('#screen-quiz');
+    renderBars();
+    servedCount = 0;
+    retryQueue = [];
+    next(true);
+  }
+
+  function resetProgress(keepAvatar){
+    S = { init:true, avatar: keepAvatar ? (S.avatar || '😎✨') : '😎✨', xp:0, level:1, streak:0, completed:{} };
+    save();
+    renderBars();
+  }
 
   function pickNextIndex(){
     // 1) Ready retry?
@@ -240,17 +226,16 @@
 
   function next(first=false){
     $('#btn-next').disabled = true;
+    answeredThisQuestion = false;
+
     const i = pickNextIndex();
     if (i === -1) {
-      if (DEV_MODE) {
-        // Loop forever in Dev Mode
-        S.completed = {}; servedCount = 0; retryQueue = [];
-        save();
-        return next();
-      }
-      scr('#screen-cooldown'); 
+      // In dev mode, loop forever by restarting a fresh session
+      if (DEV_MODE) { startSession(); return; }
+      scr('#screen-cooldown');
       return;
     }
+
     idx = i; servedCount++;
 
     const q = QUESTIONS[idx];
@@ -268,11 +253,13 @@
   }
 
   function choose(choiceIndex, el){
+    if (answeredThisQuestion) return; // safeguard
+    answeredThisQuestion = true;
+
     const q = QUESTIONS[idx];
     $$('.answer').forEach(a=>a.onclick=null);
     const correct = (choiceIndex === q.c);
 
-    // Explanation text (per answer)
     const reason = q.e?.[choiceIndex] || (correct ? "Good call." : "Not ideal—let's try a different approach next time.");
 
     if (correct){
@@ -291,7 +278,8 @@
     }
 
     save(); renderBars();
-    setTimeout(()=>{ $('#btn-next').disabled=false; next(); }, 900); // auto-advance
+    // Do NOT auto-advance; enable Next so they can read as long as they want
+    $('#btn-next').disabled = false;
   }
 
   function award(){ S.xp = (S.xp||0) + 10; S.level = 1 + Math.floor((S.xp||0)/100); }
@@ -310,3 +298,5 @@
 </script>
 </body>
 </html>
+
+
