@@ -3,20 +3,21 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Chattr XP • Neon Preview (v10)</title>
+<title>Chattr XP • Neon Preview (v11)</title>
 <style>
   :root { --bg:#111216; --surface:#1E1F24; --text:#F8FAFC; --primary:#0EA5E9; --secondary:#EC4899; --success:#10B981; --danger:#ef4444; --muted:#94a3b8; }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
-  .wrap{min-height:100dvh;display:flex;align-items:center;justify-content:center}
+  .wrap{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px}
   .card{width:min(860px,94vw);background:var(--surface);border-radius:20px;padding:20px 18px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
   h1,h2,h3{margin:8px 0}.center{text-align:center}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
   .btn{background:var(--primary);color:#fff;border:0;padding:12px 16px;border-radius:12px;cursor:pointer;font-weight:600;transition:transform .16s}
   .btn:disabled{opacity:.5;cursor:not-allowed}
   .btn:hover{transform:translateY(-1px)}
+  .btn.small{padding:8px 12px;font-size:14px}
   .ghost{background:transparent;border:1px solid var(--muted);color:var(--text)}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
-  .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+  .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:6px}
   .chip{padding:10px 12px;border:1px solid #2a2e36;border-radius:12px;cursor:pointer}
   .chip.sel{border-color:var(--secondary);outline:2px solid rgba(236,72,153,.35)}
   .answer{padding:14px;background:#20232a;border-radius:14px;cursor:pointer;user-select:none;transition:transform .12s,background .12s}
@@ -32,13 +33,13 @@
   .hide{display:none!important}
   .spacer{height:8px}
   .badge{font-size:12px;color:#aaa}
-  .confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden}
-  .piece{position:absolute;font-size:22px;animation:fall 1.2s linear forwards}
-  @keyframes fall{to{transform:translateY(100vh) rotate(360deg);opacity:0}}
-  input[type="text"]{width:100%;padding:10px;border-radius:10px;border:1px solid #2a2e36;background:#17181c;color:var(--text)}
+  input[type="text"], input[type="password"], select{width:100%;padding:10px;border-radius:10px;border:1px solid #2a2e36;background:#17181c;color:var(--text)}
   label{font-size:14px;color:#cbd5e1}
   .small{font-size:12px;color:#94a3b8}
-  select{width:100%;padding:10px;border-radius:10px;border:1px solid #2a2e36;background:#17181c;color:var(--text)}
+  /* Modal */
+  .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.5);padding:20px}
+  .modal.show{display:flex}
+  .modal .sheet{width:min(420px,92vw);background:#1c1d22;border-radius:16px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.45)}
 </style>
 </head>
 <body>
@@ -47,18 +48,22 @@
 
   <!-- PARENT DASHBOARD -->
   <div class="card hide" id="screen-parent">
-    <h2>Parent Dashboard</h2>
-    <p class="meta">Set your child’s preferred name and choose the focus areas. These settings shape what they practice.</p>
-    <div class="row" style="justify-content:space-between;margin-top:6px">
-      <div class="badge">v10</div>
-      <button class="btn ghost" id="btn-parent-exit">Done</button>
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <div>
+        <h2 style="margin:0">Parent Dashboard</h2>
+        <p class="meta" style="margin:2px 0 0">Set your child’s preferred name and choose focus areas.</p>
+      </div>
+      <div class="row" style="gap:8px">
+        <span class="badge">v11</span>
+        <button class="btn ghost small" id="btn-parent-exit">Done</button>
+      </div>
     </div>
 
     <div class="grid2" style="margin-top:12px">
       <div>
         <label for="childNameInput">Preferred Name</label>
         <input id="childNameInput" type="text" placeholder="e.g., Jordan" />
-        <p class="small">This is how we’ll greet your child in the app.</p>
+        <p class="small">We’ll greet your child using this on the Start screen and in-game.</p>
       </div>
       <div>
         <label for="areaMode">When playing, default to</label>
@@ -70,7 +75,7 @@
       </div>
     </div>
 
-    <h3 style="margin-top:6px">Focus Areas</h3>
+    <h3 style="margin-top:4px">Focus Areas</h3>
     <div class="grid3" id="parentAreas"></div>
 
     <div class="row" style="margin-top:10px">
@@ -81,7 +86,7 @@
 
     <div style="margin-top:16px">
       <h3>What these areas mean</h3>
-      <ul class="small">
+      <ul class="small" style="margin-top:6px">
         <li><b>Calm Skills</b> — pause, breathe, plan your next move.</li>
         <li><b>Talk Builder</b> — openers, tone, empathy in 1-to-1 chats.</li>
         <li><b>Group Chat IQ</b> — timing, memes, not flooding, reading the room.</li>
@@ -97,26 +102,34 @@
 
   <!-- START -->
   <div class="card" id="screen-start">
-    <div class="center">
+    <div class="row" style="justify-content:space-between;align-items:center">
       <div class="emoji">✨</div>
-      <h1>Chattr XP</h1>
+      <div class="row" style="gap:8px">
+        <button class="btn ghost small" id="btn-parent-open">Parent</button>
+      </div>
+    </div>
+
+    <div class="center" style="margin-top:8px">
+      <h1 style="margin-bottom:4px">Chattr XP</h1>
       <p class="meta">Practice real-world social moves. Earn XP. Unlock codes.</p>
-      <p class="badge">Preview v10</p>
+      <p class="badge">Preview v11</p>
 
       <h3 id="helloName" class="hide"></h3>
 
-      <h3>Pick an avatar</h3>
+      <h3 style="margin-top:10px">Pick an avatar</h3>
       <div class="row avatars" id="avatars">
         <span>😎✨</span><span>🎧⚡</span><span>🏀💥</span><span>🎮⭐</span><span>📚💡</span><span>🧠🔓</span>
       </div>
 
       <h3 style="margin-top:14px">What do you want to practice?</h3>
       <div class="grid3" id="kidAreas"></div>
+
       <div class="spacer"></div>
       <button class="btn" id="btn-start">Start</button>
 
       <div class="spacer"></div>
-      <p class="small">Parents: open the dashboard by using <code>?parent=1</code> in the link.</p>
+      <p class="small">Tip for parents: tap “Parent” above. First time you’ll set a 4-digit PIN.</p>
+      <p class="small">Dev shortcuts: add <code>?dev=1</code> for testing; <code>?parent=1</code> opens dashboard.</p>
     </div>
   </div>
 
@@ -181,6 +194,23 @@
 </div>
 
 <div id="confetti" class="confetti"></div>
+
+<!-- Parent PIN Modal -->
+<div class="modal" id="pinModal">
+  <div class="sheet">
+    <h3 id="pinTitle">Parent Access</h3>
+    <p class="meta" id="pinHint">Enter your 4-digit PIN to open the dashboard.</p>
+    <div class="grid2" style="margin-top:8px">
+      <input id="pin1" type="password" inputmode="numeric" maxlength="4" placeholder="••••" />
+      <input id="pin2" class="hide" type="password" inputmode="numeric" maxlength="4" placeholder="Confirm ••••" />
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn" id="pinOk">OK</button>
+      <button class="btn ghost" id="pinCancel">Cancel</button>
+    </div>
+    <p class="small" style="margin-top:8px">Forgot PIN? Clear this site’s data in your browser to reset. (Local-only demo security.)</p>
+  </div>
+</div>
 
 <script>
   // --- Modes via URL ---
@@ -261,13 +291,13 @@
   // --- Storage ---
   let S = JSON.parse(localStorage.getItem('cxp')||'{}');
   if (!S.init) { S = { init:true, avatar:'😎✨', xp:0, level:1, streak:0, completed:{}, areasMode:'focus', chosenAreas:AREAS.map(a=>a.id) }; save(); }
-  let P = JSON.parse(localStorage.getItem('cxp_parent')||'{}'); // parent settings
-  if (!P.init) { P = { init:true, childName:'', focusAreas:AREAS.map(a=>a.id), areaMode:'focus' }; saveParent(); }
+  let P = JSON.parse(localStorage.getItem('cxp_parent')||'{}'); // parent settings + pin
+  if (!P.init) { P = { init:true, childName:'', focusAreas:AREAS.map(a=>a.id), areaMode:'focus', pinHash:'' }; saveParent(); }
 
   function save(){ localStorage.setItem('cxp', JSON.stringify(S)); }
   function saveParent(){ localStorage.setItem('cxp_parent', JSON.stringify(P)); }
 
-  // --- Retry logic / quiz state ---
+  // --- Retry / quiz state ---
   const RETRY_GAP = 2;
   let retryQueue = [];  // { idx, when }
   let servedCount = 0;
@@ -275,7 +305,7 @@
   let answeredThisQuestion = false;
   let awaitingManualAdvance = false;
 
-  // --- Build Parent UI ---
+  // --- Parent chips (dashboard) ---
   const parentAreaBox = $('#parentAreas');
   AREAS.forEach(a=>{
     const div = document.createElement('div');
@@ -303,57 +333,45 @@
   $('#btn-clear-all').onclick = ()=>{ P.focusAreas = []; renderParentChips(); };
   $('#btn-parent-save').onclick = ()=>{
     P.childName = ($('#childNameInput').value || '').trim();
-    P.areaMode = $('#areaMode').value;
+    P.areaMode  = $('#areaMode').value;
     saveParent();
+    refreshHello();
+    buildKidAreas();
     alert('Saved!');
   };
   $('#btn-parent-exit').onclick = ()=>{ scr('#screen-start'); refreshHello(); buildKidAreas(); };
 
-  // --- Build Kid area chips based on parent focus selection ---
+  // --- Kid area chips (start screen) ---
   const kidAreaBox = $('#kidAreas');
   function buildKidAreas(){
     kidAreaBox.innerHTML = '';
     const enabled = P.focusAreas.length ? P.focusAreas : AREAS.map(a=>a.id);
-    // special "All My Focus Areas"
     const allDiv = document.createElement('div');
-    allDiv.className = 'chip';
-    allDiv.dataset.id = '__all';
-    allDiv.textContent = '🌈 All My Focus Areas';
+    allDiv.className = 'chip'; allDiv.dataset.id='__all'; allDiv.textContent='🌈 All My Focus Areas';
     kidAreaBox.appendChild(allDiv);
-
     AREAS.forEach(a=>{
-      if (!enabled.includes(a.id)) return; // hidden if parent disabled
+      if (!enabled.includes(a.id)) return;
       const div = document.createElement('div');
-      div.className = 'chip';
-      div.dataset.id = a.id;
-      div.textContent = `${a.icon} ${a.name}`;
+      div.className='chip'; div.dataset.id=a.id; div.textContent=`${a.icon} ${a.name}`;
       kidAreaBox.appendChild(div);
     });
-
-    // Preselect based on parent default
     const defaultIsAll = (P.areaMode || 'focus') === 'all';
-    selectKidAreas(defaultIsAll ? ['__all'] : enabled.slice()); // select all enabled if focus mode
+    selectKidAreas(defaultIsAll ? ['__all'] : enabled.slice());
   }
   function selectKidAreas(ids){
-    $$('#kidAreas .chip').forEach(ch=>{
-      ch.classList.toggle('sel', ids.includes(ch.dataset.id));
-    });
-    // store child’s play selection in S
-    if (ids.includes('__all')) { S.chosenAreas = P.focusAreas.slice(); }
-    else { S.chosenAreas = ids.slice(); }
+    $$('#kidAreas .chip').forEach(ch=>ch.classList.toggle('sel', ids.includes(ch.dataset.id)));
+    if (ids.includes('__all')) S.chosenAreas = P.focusAreas.slice();
+    else S.chosenAreas = ids.slice();
     save();
   }
   kidAreaBox.addEventListener('click',(e)=>{
     const chip = e.target.closest('.chip'); if(!chip) return;
-    if (chip.dataset.id === '__all'){
-      selectKidAreas(['__all']);
-      return;
-    }
+    if (chip.dataset.id==='__all'){ selectKidAreas(['__all']); return; }
     const current = $$('#kidAreas .chip.sel').map(x=>x.dataset.id);
     const id = chip.dataset.id;
     let next = current.includes(id) ? current.filter(x=>x!==id) : current.concat(id);
-    next = next.filter(x=>x!=='__all'); // if picking specifics, drop "all"
-    if (next.length===0) next = ['__all']; // never empty
+    next = next.filter(x=>x!=='__all');
+    if (next.length===0) next=['__all'];
     selectKidAreas(next);
   });
 
@@ -363,21 +381,60 @@
     sp.onclick = () => { $$('#avatars span').forEach(x=>x.classList.remove('sel')); sp.classList.add('sel'); S.avatar = sp.textContent; save(); };
   });
 
-  // --- Greeting with preferred name ---
+  // --- Greeting + Start button label with preferred name ---
   function refreshHello(){
     const name = (P.childName || '').trim();
     const hello = $('#helloName');
     const inline = $('#helloInline');
+    const startBtn = $('#btn-start');
     if (name){
       hello.textContent = `Hi, ${name} 👋`;
       hello.classList.remove('hide');
       inline.textContent = `${name} •`;
       inline.classList.remove('hide');
+      startBtn.textContent = `Start, ${name}`;
     } else {
       hello.classList.add('hide');
       inline.classList.add('hide');
+      startBtn.textContent = 'Start';
     }
   }
+
+  // --- Parent PIN modal logic ---
+  const pinModal = $('#pinModal'), pin1 = $('#pin1'), pin2 = $('#pin2'), pinOk = $('#pinOk'), pinCancel = $('#pinCancel'), pinTitle = $('#pinTitle'), pinHint = $('#pinHint');
+  function openPinModal(){
+    pin1.value = ''; pin2.value = '';
+    const hasPin = !!P.pinHash;
+    pinTitle.textContent = hasPin ? 'Parent Access' : 'Create Parent PIN';
+    pinHint.textContent  = hasPin ? 'Enter your 4-digit PIN to open the dashboard.' : 'Set a 4-digit PIN. You’ll use this to open the dashboard.';
+    pin2.classList.toggle('hide', hasPin); // show confirm only on create
+    pinModal.classList.add('show');
+    setTimeout(()=>pin1.focus(), 60);
+  }
+  function closePinModal(){ pinModal.classList.remove('show'); }
+
+  // simple (not secure) hash for demo
+  function hash4(s){ let h=0; for(let i=0;i<s.length;i++) h=(h*31 + s.charCodeAt(i))|0; return String(h); }
+
+  $('#btn-parent-open').onclick = ()=>{
+    // dev backdoor: allow ?parent=1 without PIN
+    if (PARENT_MODE) { renderParentChips(); scr('#screen-parent'); return; }
+    openPinModal();
+  };
+  pinCancel.onclick = closePinModal;
+  pinOk.onclick = ()=>{
+    const v1 = (pin1.value||'').trim();
+    if (!/^\d{4}$/.test(v1)) { alert('Please enter a 4-digit PIN.'); return; }
+    if (!P.pinHash){
+      const v2 = (pin2.value||'').trim();
+      if (v1!==v2){ alert('PINs do not match.'); return; }
+      P.pinHash = hash4(v1); saveParent();
+      closePinModal(); renderParentChips(); scr('#screen-parent');
+    } else {
+      if (hash4(v1)===P.pinHash){ closePinModal(); renderParentChips(); scr('#screen-parent'); }
+      else { alert('Incorrect PIN.'); }
+    }
+  };
 
   // --- Buttons (Kid flow) ---
   $('#btn-start').onclick   = () => { $('#avatar').textContent=S.avatar; $('#pAvatar').textContent=S.avatar; startSession(); };
@@ -403,7 +460,7 @@
     save(); renderBars();
   }
 
-  // --- Pick & filter questions by areas ---
+  // --- Allowed areas ---
   function allowedAreas(){
     const picked = (S.chosenAreas && S.chosenAreas.length) ? S.chosenAreas : P.focusAreas.slice();
     return new Set(picked);
@@ -480,7 +537,6 @@
 
   function award(){ S.xp = (S.xp||0) + 10; S.level = 1 + Math.floor((S.xp||0)/100); }
   function renderBars(){ $('#streak').textContent=S.streak||0; $('#xptext').textContent=`XP ${S.xp||0}`; $('#level').textContent=S.level||1; $('#xpfill').style.width=((S.xp%100))+'%'; }
-
   function areaLabel(id){ const a = AREAS.find(x=>x.id===id); return a ? `${a.icon} ${a.name}` : 'Practice'; }
 
   // --- Confetti ---
@@ -495,9 +551,12 @@
   }
 
   // --- Init ---
-  refreshHello();
-  buildKidAreas();
-  if (PARENT_MODE){ renderParentChips(); scr('#screen-parent'); }
+  function init(){
+    refreshHello();
+    buildKidAreas();
+    if (PARENT_MODE){ renderParentChips(); scr('#screen-parent'); }
+  }
+  init();
 </script>
 </body>
 </html>
