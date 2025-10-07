@@ -3,23 +3,19 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Chattr XP • Neon Preview (v11)</title>
+<title>Chattr XP • Neon Preview (v12)</title>
 <style>
   :root { --bg:#111216; --surface:#1E1F24; --text:#F8FAFC; --primary:#0EA5E9; --secondary:#EC4899; --success:#10B981; --danger:#ef4444; --muted:#94a3b8; }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
-  .wrap{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px}
-  .card{width:min(860px,94vw);background:var(--surface);border-radius:20px;padding:20px 18px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  .wrap{min-height:100dvh;display:flex;align-items:center;justify-content:center}
+  .card{width:min(820px,92vw);background:var(--surface);border-radius:20px;padding:22px 18px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
   h1,h2,h3{margin:8px 0}.center{text-align:center}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
   .btn{background:var(--primary);color:#fff;border:0;padding:12px 16px;border-radius:12px;cursor:pointer;font-weight:600;transition:transform .16s}
   .btn:disabled{opacity:.5;cursor:not-allowed}
   .btn:hover{transform:translateY(-1px)}
-  .btn.small{padding:8px 12px;font-size:14px}
   .ghost{background:transparent;border:1px solid var(--muted);color:var(--text)}
-  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
-  .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:6px}
-  .chip{padding:10px 12px;border:1px solid #2a2e36;border-radius:12px;cursor:pointer}
-  .chip.sel{border-color:var(--secondary);outline:2px solid rgba(236,72,153,.35)}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
   .answer{padding:14px;background:#20232a;border-radius:14px;cursor:pointer;user-select:none;transition:transform .12s,background .12s}
   .answer:hover{transform:scale(1.02);background:#262a33}
   .correct{background:var(--success)!important}
@@ -28,122 +24,61 @@
   .bar>div{height:100%;width:0%;background:linear-gradient(90deg,var(--secondary),var(--primary));transition:width .28s}
   .meta{color:var(--muted);font-size:14px}
   .emoji{font-size:38px}
-  .avatars span{font-size:32px;padding:6px 10px;border-radius:10px;cursor:pointer}
-  .avatars span.sel{outline:2px solid var(--secondary)}
   .hide{display:none!important}
   .spacer{height:8px}
   .badge{font-size:12px;color:#aaa}
-  input[type="text"], input[type="password"], select{width:100%;padding:10px;border-radius:10px;border:1px solid #2a2e36;background:#17181c;color:var(--text)}
-  label{font-size:14px;color:#cbd5e1}
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid #2a2e36;padding:6px 10px;border-radius:999px;font-size:12px;color:#cbd5e1}
+  .pill b{color:#fff}
+  .confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden}
+  .piece{position:absolute;font-size:22px;animation:fall 1.2s linear forwards}
+  @keyframes fall{to{transform:translateY(100vh) rotate(360deg);opacity:0}}
+
+  /* Parent modal */
+  .modalBack{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center}
+  .modal{width:min(720px,92vw);background:#17181d;border:1px solid #2a2e36;border-radius:16px;padding:16px}
+  .formrow{display:grid;grid-template-columns:140px 1fr;gap:10px;align-items:center;margin:8px 0}
+  .input, .pin{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #30333b;background:#1f2127;color:#fff}
+  .checkgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}
+  .check{display:flex;gap:8px;align-items:center;padding:10px;border:1px solid #30333b;border-radius:12px;background:#1b1d23}
+  .modalBtns{display:flex;justify-content:flex-end;gap:8px;margin-top:10px}
   .small{font-size:12px;color:#94a3b8}
-  /* Modal */
-  .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.5);padding:20px}
-  .modal.show{display:flex}
-  .modal .sheet{width:min(420px,92vw);background:#1c1d22;border-radius:16px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.45)}
 </style>
 </head>
 <body>
-
 <div class="wrap">
-
-  <!-- PARENT DASHBOARD -->
-  <div class="card hide" id="screen-parent">
-    <div class="row" style="justify-content:space-between;align-items:center">
-      <div>
-        <h2 style="margin:0">Parent Dashboard</h2>
-        <p class="meta" style="margin:2px 0 0">Set your child’s preferred name and choose focus areas.</p>
-      </div>
-      <div class="row" style="gap:8px">
-        <span class="badge">v11</span>
-        <button class="btn ghost small" id="btn-parent-exit">Done</button>
-      </div>
-    </div>
-
-    <div class="grid2" style="margin-top:12px">
-      <div>
-        <label for="childNameInput">Preferred Name</label>
-        <input id="childNameInput" type="text" placeholder="e.g., Jordan" />
-        <p class="small">We’ll greet your child using this on the Start screen and in-game.</p>
-      </div>
-      <div>
-        <label for="areaMode">When playing, default to</label>
-        <select id="areaMode">
-          <option value="focus">Only the selected focus areas</option>
-          <option value="all">All areas</option>
-        </select>
-        <p class="small">Kids can still switch on the Start screen.</p>
-      </div>
-    </div>
-
-    <h3 style="margin-top:4px">Focus Areas</h3>
-    <div class="grid3" id="parentAreas"></div>
-
-    <div class="row" style="margin-top:10px">
-      <button class="btn" id="btn-select-all">Select All</button>
-      <button class="btn ghost" id="btn-clear-all">Clear</button>
-      <button class="btn" id="btn-parent-save">Save Changes</button>
-    </div>
-
-    <div style="margin-top:16px">
-      <h3>What these areas mean</h3>
-      <ul class="small" style="margin-top:6px">
-        <li><b>Calm Skills</b> — pause, breathe, plan your next move.</li>
-        <li><b>Talk Builder</b> — openers, tone, empathy in 1-to-1 chats.</li>
-        <li><b>Group Chat IQ</b> — timing, memes, not flooding, reading the room.</li>
-        <li><b>Boundaries & Consent</b> — saying no, respecting no, check-ins.</li>
-        <li><b>Focus & Habits</b> — screens vs homework, routines, rewards.</li>
-        <li><b>Empathy Mode</b> — perspective taking, repair after harm.</li>
-        <li><b>School Collab</b> — teachers, group projects, study buddies.</li>
-        <li><b>Digital Drama</b> — rumors, screenshots, cooler heads.</li>
-        <li><b>Conflict Reset</b> — de-escalation, “repair” messages, bridges.</li>
-      </ul>
-    </div>
-  </div>
-
-  <!-- START -->
+  <!-- START (Kid) -->
   <div class="card" id="screen-start">
-    <div class="row" style="justify-content:space-between;align-items:center">
-      <div class="emoji">✨</div>
+    <div class="topbar">
+      <div class="pill">🎮 <b>Chattr XP</b> • Neon • <span class="badge">v12</span></div>
       <div class="row" style="gap:8px">
-        <button class="btn ghost small" id="btn-parent-open">Parent</button>
+        <button class="btn ghost" id="btn-parent">Parent</button>
       </div>
     </div>
 
-    <div class="center" style="margin-top:8px">
-      <h1 style="margin-bottom:4px">Chattr XP</h1>
-      <p class="meta">Practice real-world social moves. Earn XP. Unlock codes.</p>
-      <p class="badge">Preview v11</p>
+    <div class="center">
+      <div class="emoji" id="brand">✨</div>
+      <h1 id="kidGreeting">Ready to play?</h1>
+      <p class="meta" id="kidSub">Practice real-world moves. Earn XP. Unlock rewards.</p>
 
-      <h3 id="helloName" class="hide"></h3>
-
-      <h3 style="margin-top:10px">Pick an avatar</h3>
-      <div class="row avatars" id="avatars">
-        <span>😎✨</span><span>🎧⚡</span><span>🏀💥</span><span>🎮⭐</span><span>📚💡</span><span>🧠🔓</span>
-      </div>
-
-      <h3 style="margin-top:14px">What do you want to practice?</h3>
-      <div class="grid3" id="kidAreas"></div>
-
+      <!-- NOTE: Kid focus-area buttons removed by design -->
       <div class="spacer"></div>
-      <button class="btn" id="btn-start">Start</button>
-
-      <div class="spacer"></div>
-      <p class="small">Tip for parents: tap “Parent” above. First time you’ll set a 4-digit PIN.</p>
-      <p class="small">Dev shortcuts: add <code>?dev=1</code> for testing; <code>?parent=1</code> opens dashboard.</p>
+      <button class="btn" id="btn-start">Play</button>
+      <p class="small" style="margin-top:8px" id="questTagline"></p>
     </div>
   </div>
 
   <!-- QUIZ -->
   <div class="card hide" id="screen-quiz">
     <div class="row" style="justify-content:space-between">
-      <div><span id="avatar" class="emoji">😎✨</span></div>
-      <div class="meta"><span id="helloInline" class="hide"></span> 🔥 Streak: <b id="streak">0</b></div>
+      <div class="pill" id="questPill">🧭 Today’s Quest</div>
+      <div class="meta">🔥 Streak: <b id="streak">0</b></div>
     </div>
     <div class="bar"><div id="xpfill"></div></div>
     <div class="meta"><span id="xptext">XP 0</span> · Level <span id="level">1</span></div>
 
     <h3 id="qtext" style="margin-top:10px"></h3>
-    <div class="grid2" id="answers"></div>
+    <div class="grid" id="answers"></div>
     <div class="meta" id="feedback" style="margin-top:6px"></div>
     <div class="row" style="justify-content:space-between;margin-top:12px">
       <button class="btn ghost" id="btn-exit">Exit</button>
@@ -151,7 +86,7 @@
     </div>
   </div>
 
-  <!-- COOLDOWN -->
+  <!-- COOLDOWN (kept for later use) -->
   <div class="card hide" id="screen-cooldown">
     <div class="center">
       <h2>Nice work today 🔥</h2>
@@ -162,7 +97,7 @@
     </div>
   </div>
 
-  <!-- REWARD -->
+  <!-- REWARD (placeholder) -->
   <div class="card hide" id="screen-reward">
     <div class="center">
       <h2>Rewards</h2>
@@ -182,7 +117,6 @@
   <div class="card hide" id="screen-profile">
     <div class="center">
       <h2>Profile</h2>
-      <div class="emoji" id="pAvatar">😎✨</div>
       <p class="meta">Theme: Neon · Sounds: Off</p>
       <div class="row center" style="justify-content:center;gap:8px">
         <button class="btn" id="btn-play-again">Play Again</button>
@@ -190,310 +124,201 @@
       </div>
     </div>
   </div>
+</div>
 
+<!-- Parent PIN / Dashboard modal -->
+<div id="modalRoot" class="modalBack hide">
+  <div class="modal" id="modal">
+    <h3 id="modalTitle">Parent</h3>
+    <div id="modalBody"></div>
+    <div class="modalBtns" id="modalBtns"></div>
+  </div>
 </div>
 
 <div id="confetti" class="confetti"></div>
 
-<!-- Parent PIN Modal -->
-<div class="modal" id="pinModal">
-  <div class="sheet">
-    <h3 id="pinTitle">Parent Access</h3>
-    <p class="meta" id="pinHint">Enter your 4-digit PIN to open the dashboard.</p>
-    <div class="grid2" style="margin-top:8px">
-      <input id="pin1" type="password" inputmode="numeric" maxlength="4" placeholder="••••" />
-      <input id="pin2" class="hide" type="password" inputmode="numeric" maxlength="4" placeholder="Confirm ••••" />
-    </div>
-    <div class="row" style="margin-top:10px">
-      <button class="btn" id="pinOk">OK</button>
-      <button class="btn ghost" id="pinCancel">Cancel</button>
-    </div>
-    <p class="small" style="margin-top:8px">Forgot PIN? Clear this site’s data in your browser to reset. (Local-only demo security.)</p>
-  </div>
-</div>
-
 <script>
-  // --- Modes via URL ---
+  /* =========================
+     CONFIG & DATA
+     ========================= */
   const DEV_MODE = location.search.includes('dev=1');
-  const PARENT_MODE = location.search.includes('parent=1');
+  const BYPASS_PARENT = location.search.includes('parent=1'); // helper for testing
 
-  // --- Focus Areas ---
+  // Areas parents can enable (kids never see these)
   const AREAS = [
-    {id:'calm',    name:'Calm Skills',       icon:'🧘'},
-    {id:'talk',    name:'Talk Builder',      icon:'💬'},
-    {id:'group',   name:'Group Chat IQ',     icon:'👥'},
-    {id:'bounds',  name:'Boundaries & Consent',icon:'🛑'},
-    {id:'focus',   name:'Focus & Habits',    icon:'🎯'},
-    {id:'empathy', name:'Empathy Mode',      icon:'🤝'},
-    {id:'school',  name:'School Collab',     icon:'🏫'},
-    {id:'drama',   name:'Digital Drama',     icon:'📱'},
-    {id:'reset',   name:'Conflict Reset',    icon:'🕊️'}
+    {id:'social',     name:'Social Skills',        icon:'🫶'},
+    {id:'focus',      name:'Focus & Planning',     icon:'🧭'},
+    {id:'emotion',    name:'Emotion Regulation',   icon:'🌈'},
+    {id:'confidence', name:'Confidence & Voice',   icon:'📣'},
+    {id:'digital',    name:'Digital Citizenship',  icon:'💻'}
   ];
 
-  // --- Demo questions with area tags + explanations ---
+  // Questions tagged by area (sample set)
   const QUESTIONS = [
-    { area:'focus',
-      q:"A friend texts during homework time. What’s your move?",
-      a:["Finish this section, then reply","Reply now, it’s quick","Ignore for hours","Send a meme instead"],
-      e:[
-        "You keep focus and still respond soon. Your brain switches tasks less, so you finish faster and sound calmer.",
-        "Looks harmless, but it breaks focus. One quick reply becomes a thread and homework takes longer.",
-        "They may feel ignored or worry you’re upset. Silence creates drama you don’t need.",
-        "Off-topic and delays both tasks. Sends mixed signals and can seem dismissive."
-      ], c:0
-    },
-    { area:'group',
-      q:"You join a new group chat. Best first message?",
-      a:["Hey, I’m new here! Nice to meet you all.","Spam emojis","Drop a hot take","Ask everyone’s full names"],
-      e:[
-        "Friendly + low-pressure. You signal respect and invite normal conversation.",
+    // social
+    {area:'social', q:"You join a new group chat. Best first message?",
+     a:["Hey, I’m new here! Nice to meet you all.","Spam emojis","Drop a hot take","Ask everyone’s full names"],
+     e:["Friendly + low-pressure. You signal respect and invite normal conversation.",
         "Looks chaotic and attention-seeking; people may mute you immediately.",
         "High-conflict starts make a bad first impression and can split the group.",
-        "Feels like an interrogation. Learn names naturally as people talk."
-      ], c:0
-    },
-    { area:'empathy',
-      q:"A classmate misreads your joke and gets upset. Best fix?",
-      a:["Explain and apologize","Double down","Blame autocorrect","Leave the chat"],
-      e:[
-        "You repair trust quickly. Owning it shows maturity and keeps the friendship.",
+        "Feels like an interrogation. Learn names naturally as people talk."],
+     c:0},
+    {area:'social', q:"A classmate misreads your joke & gets upset. Best fix?",
+     a:["Explain and apologize","Double down","Blame autocorrect","Leave the chat"],
+     e:["You repair trust quickly. Owning it shows maturity and keeps the friendship.",
         "Escalates hurt feelings and makes you look mean on purpose.",
         "Dodges responsibility; they’ll feel you aren’t sincere.",
-        "Looks like you don’t care and leaves the problem unsolved."
-      ], c:0
-    },
-    { area:'talk',
-      q:"Someone cuts you off while speaking. What’s best?",
-      a:["Wait, then calmly finish","Interrupt back","Stay silent","Walk out"],
-      e:[
-        "You set a respectful boundary and model good turn-taking.",
-        "Turns it into a battle; everyone stops listening and tension rises.",
+        "Looks like you don’t care and leaves the problem unsolved."],
+     c:0},
+
+    // focus
+    {area:'focus', q:"A friend texts during homework time. What’s your move?",
+     a:["Finish this section, then reply","Reply now, it’s quick","Ignore for hours","Send a meme instead"],
+     e:["You keep focus and still respond soon. Less task-switching = faster, calmer finish.",
+        "Breaks focus; one quick reply becomes a thread. Work time balloons.",
+        "They may feel ignored or worry you’re upset; silence creates drama.",
+        "Off-topic and delays both tasks; sends mixed signals."],
+     c:0},
+
+    // emotion
+    {area:'emotion', q:"You feel your frustration rising in a conversation. Best next step?",
+     a:["Pause and take a breath","Speak faster to get it out","Type in all caps","Quit the chat immediately"],
+     e:["A short pause resets tone so you can respond, not react.",
+        "Speed increases mistakes and can sound aggressive.",
+        "Looks like shouting; others get defensive.",
+        "Looks avoidant and leaves things unresolved."],
+     c:0},
+
+    // confidence
+    {area:'confidence', q:"Someone cuts you off while speaking. What’s best?",
+     a:["Wait, then calmly finish","Interrupt back","Stay silent","Walk out"],
+     e:["You set a respectful boundary and model good turn-taking.",
+        "Turns it into a battle; everyone stops listening.",
         "Your point gets lost and you teach people it’s okay to talk over you.",
-        "Escalates the situation and can look disrespectful."
-      ], c:0
-    },
-    { area:'reset',
-      q:"You forgot a friend’s birthday. What now?",
-      a:["Apologize and make it up","Pretend you remembered","Blame your calendar","Ignore it"],
-      e:[
-        "Honest + effort = trust repair. Small plan > long excuse.",
-        "They’ll likely find out; trust drops more than if you were honest.",
-        "Excuses feel weak and they may think you don’t value them.",
-        "Signals they don’t matter to you, which can end friendships."
-      ], c:0
-    }
+        "Escalates the situation and can look disrespectful."],
+     c:0},
+
+    // digital
+    {area:'digital', q:"You see a link offering free game credits. What now?",
+     a:["Don’t click; verify with the official site","Click fast before it expires","Give your login to claim","Share with the group first"],
+     e:["Scams often mimic real pages; check official channels first.",
+        "Urgency is a scam tactic; hurrying increases risk.",
+        "Never share credentials; accounts get stolen.",
+        "Spreading unknown links risks your friends, too."],
+     c:0}
   ];
 
-  // --- Helpers ---
+  /* =========================
+     STORAGE
+     ========================= */
   const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
-  const scr = id => { ['#screen-parent','#screen-start','#screen-quiz','#screen-cooldown','#screen-reward','#screen-profile'].forEach(sel => $(sel).classList.add('hide')); $(id).classList.remove('hide'); };
-
-  // --- Storage ---
-  let S = JSON.parse(localStorage.getItem('cxp')||'{}');
-  if (!S.init) { S = { init:true, avatar:'😎✨', xp:0, level:1, streak:0, completed:{}, areasMode:'focus', chosenAreas:AREAS.map(a=>a.id) }; save(); }
-  let P = JSON.parse(localStorage.getItem('cxp_parent')||'{}'); // parent settings + pin
-  if (!P.init) { P = { init:true, childName:'', focusAreas:AREAS.map(a=>a.id), areaMode:'focus', pinHash:'' }; saveParent(); }
-
-  function save(){ localStorage.setItem('cxp', JSON.stringify(S)); }
+  const scr = id => { ['#screen-start','#screen-quiz','#screen-cooldown','#screen-reward','#screen-profile'].forEach(sel => $(sel).classList.add('hide')); $(id).classList.remove('hide'); };
+  function saveProgress(){ localStorage.setItem('cxp', JSON.stringify(S)); }
   function saveParent(){ localStorage.setItem('cxp_parent', JSON.stringify(P)); }
 
-  // --- Retry / quiz state ---
-  const RETRY_GAP = 2;
-  let retryQueue = [];  // { idx, when }
+  // Kid progress (local)
+  let S = JSON.parse(localStorage.getItem('cxp')||'{}');
+  if (!S.init) { S = { init:true, xp:0, level:1, streak:0, completed:{}}; saveProgress(); }
+
+  // Parent settings (local)
+  let P = JSON.parse(localStorage.getItem('cxp_parent')||'{}');
+  if (!P.init) { P = { init:true, pinHash:null, preferredName:'', allowedAreas:AREAS.map(a=>a.id) }; saveParent(); }
+
+  /* =========================
+     RUNTIME STATE
+     ========================= */
+  const POINTS_PER_CORRECT = 10;
+  const RETRY_GAP = 2; // missed question reappears after N other serves
+  let retryQueue = []; // {idx, when}
   let servedCount = 0;
   let idx = -1;
-  let answeredThisQuestion = false;
   let awaitingManualAdvance = false;
+  let answeredThisQuestion = false;
 
-  // --- Parent chips (dashboard) ---
-  const parentAreaBox = $('#parentAreas');
-  AREAS.forEach(a=>{
-    const div = document.createElement('div');
-    div.className = 'chip';
-    div.dataset.id = a.id;
-    div.textContent = `${a.icon} ${a.name}`;
-    parentAreaBox.appendChild(div);
-  });
-  function renderParentChips(){
-    $$('#parentAreas .chip').forEach(ch=>{
-      const on = P.focusAreas.includes(ch.dataset.id);
-      ch.classList.toggle('sel', on);
-    });
-    $('#childNameInput').value = P.childName || '';
-    $('#areaMode').value = P.areaMode || 'focus';
-  }
-  parentAreaBox.addEventListener('click',(e)=>{
-    const chip = e.target.closest('.chip'); if(!chip) return;
-    const id = chip.dataset.id;
-    if (P.focusAreas.includes(id)) P.focusAreas = P.focusAreas.filter(x=>x!==id);
-    else P.focusAreas.push(id);
-    renderParentChips();
-  });
-  $('#btn-select-all').onclick = ()=>{ P.focusAreas = AREAS.map(a=>a.id); renderParentChips(); };
-  $('#btn-clear-all').onclick = ()=>{ P.focusAreas = []; renderParentChips(); };
-  $('#btn-parent-save').onclick = ()=>{
-    P.childName = ($('#childNameInput').value || '').trim();
-    P.areaMode  = $('#areaMode').value;
-    saveParent();
-    refreshHello();
-    buildKidAreas();
-    alert('Saved!');
-  };
-  $('#btn-parent-exit').onclick = ()=>{ scr('#screen-start'); refreshHello(); buildKidAreas(); };
-
-  // --- Kid area chips (start screen) ---
-  const kidAreaBox = $('#kidAreas');
-  function buildKidAreas(){
-    kidAreaBox.innerHTML = '';
-    const enabled = P.focusAreas.length ? P.focusAreas : AREAS.map(a=>a.id);
-    const allDiv = document.createElement('div');
-    allDiv.className = 'chip'; allDiv.dataset.id='__all'; allDiv.textContent='🌈 All My Focus Areas';
-    kidAreaBox.appendChild(allDiv);
-    AREAS.forEach(a=>{
-      if (!enabled.includes(a.id)) return;
-      const div = document.createElement('div');
-      div.className='chip'; div.dataset.id=a.id; div.textContent=`${a.icon} ${a.name}`;
-      kidAreaBox.appendChild(div);
-    });
-    const defaultIsAll = (P.areaMode || 'focus') === 'all';
-    selectKidAreas(defaultIsAll ? ['__all'] : enabled.slice());
-  }
-  function selectKidAreas(ids){
-    $$('#kidAreas .chip').forEach(ch=>ch.classList.toggle('sel', ids.includes(ch.dataset.id)));
-    if (ids.includes('__all')) S.chosenAreas = P.focusAreas.slice();
-    else S.chosenAreas = ids.slice();
-    save();
-  }
-  kidAreaBox.addEventListener('click',(e)=>{
-    const chip = e.target.closest('.chip'); if(!chip) return;
-    if (chip.dataset.id==='__all'){ selectKidAreas(['__all']); return; }
-    const current = $$('#kidAreas .chip.sel').map(x=>x.dataset.id);
-    const id = chip.dataset.id;
-    let next = current.includes(id) ? current.filter(x=>x!==id) : current.concat(id);
-    next = next.filter(x=>x!=='__all');
-    if (next.length===0) next=['__all'];
-    selectKidAreas(next);
-  });
-
-  // --- Avatar picker ---
-  $$('#avatars span').forEach(sp=>{
-    if (sp.textContent === S.avatar) sp.classList.add('sel');
-    sp.onclick = () => { $$('#avatars span').forEach(x=>x.classList.remove('sel')); sp.classList.add('sel'); S.avatar = sp.textContent; save(); };
-  });
-
-  // --- Greeting + Start button label with preferred name ---
-  function refreshHello(){
-    const name = (P.childName || '').trim();
-    const hello = $('#helloName');
-    const inline = $('#helloInline');
-    const startBtn = $('#btn-start');
-    if (name){
-      hello.textContent = `Hi, ${name} 👋`;
-      hello.classList.remove('hide');
-      inline.textContent = `${name} •`;
-      inline.classList.remove('hide');
-      startBtn.textContent = `Start, ${name}`;
-    } else {
-      hello.classList.add('hide');
-      inline.classList.add('hide');
-      startBtn.textContent = 'Start';
+  /* =========================
+     HELPERS
+     ========================= */
+  const hashPin = pin => pin.split('').reduce((a,ch)=> (a*31 + ch.charCodeAt(0))>>>0, 7) ^ 0xa5a5a5a5;
+  const areaName = id => AREAS.find(a=>a.id===id)?.name || id;
+  function renderBars(){ $('#streak').textContent=S.streak||0; $('#xptext').textContent=`XP ${S.xp||0}`; $('#level').textContent=S.level||1; $('#xpfill').style.width=((S.xp%100))+'%'; }
+  function award(){ S.xp=(S.xp||0)+POINTS_PER_CORRECT; S.level = 1 + Math.floor((S.xp||0)/100); }
+  function confetti(){
+    const c=$('#confetti');
+    for(let i=0;i<22;i++){
+      const s=document.createElement('span'); s.className='piece';
+      s.textContent=['✨','💫','🌟','🎉','⭐'][Math.floor(Math.random()*5)];
+      s.style.left=(Math.random()*100)+'%'; s.style.animationDelay=(Math.random()*0.25)+'s';
+      c.appendChild(s); setTimeout(()=>s.remove(),1400);
     }
   }
-
-  // --- Parent PIN modal logic ---
-  const pinModal = $('#pinModal'), pin1 = $('#pin1'), pin2 = $('#pin2'), pinOk = $('#pinOk'), pinCancel = $('#pinCancel'), pinTitle = $('#pinTitle'), pinHint = $('#pinHint');
-  function openPinModal(){
-    pin1.value = ''; pin2.value = '';
-    const hasPin = !!P.pinHash;
-    pinTitle.textContent = hasPin ? 'Parent Access' : 'Create Parent PIN';
-    pinHint.textContent  = hasPin ? 'Enter your 4-digit PIN to open the dashboard.' : 'Set a 4-digit PIN. You’ll use this to open the dashboard.';
-    pin2.classList.toggle('hide', hasPin); // show confirm only on create
-    pinModal.classList.add('show');
-    setTimeout(()=>pin1.focus(), 60);
+  function allowedQuestionIndices(){
+    const set = (P.allowedAreas && P.allowedAreas.length) ? new Set(P.allowedAreas) : new Set(AREAS.map(a=>a.id));
+    return QUESTIONS.map((q,i)=> set.has(q.area) ? i : -1).filter(i=>i!==-1);
   }
-  function closePinModal(){ pinModal.classList.remove('show'); }
-
-  // simple (not secure) hash for demo
-  function hash4(s){ let h=0; for(let i=0;i<s.length;i++) h=(h*31 + s.charCodeAt(i))|0; return String(h); }
-
-  $('#btn-parent-open').onclick = ()=>{
-    // dev backdoor: allow ?parent=1 without PIN
-    if (PARENT_MODE) { renderParentChips(); scr('#screen-parent'); return; }
-    openPinModal();
-  };
-  pinCancel.onclick = closePinModal;
-  pinOk.onclick = ()=>{
-    const v1 = (pin1.value||'').trim();
-    if (!/^\d{4}$/.test(v1)) { alert('Please enter a 4-digit PIN.'); return; }
-    if (!P.pinHash){
-      const v2 = (pin2.value||'').trim();
-      if (v1!==v2){ alert('PINs do not match.'); return; }
-      P.pinHash = hash4(v1); saveParent();
-      closePinModal(); renderParentChips(); scr('#screen-parent');
-    } else {
-      if (hash4(v1)===P.pinHash){ closePinModal(); renderParentChips(); scr('#screen-parent'); }
-      else { alert('Incorrect PIN.'); }
-    }
-  };
-
-  // --- Buttons (Kid flow) ---
-  $('#btn-start').onclick   = () => { $('#avatar').textContent=S.avatar; $('#pAvatar').textContent=S.avatar; startSession(); };
-  $('#btn-exit').onclick    = () => scr('#screen-start');
-  $('#btn-next').onclick    = () => next(true);     // manual advance
-  $('#btn-reward').onclick  = () => scr('#screen-reward');
-  $('#btn-profile').onclick = () => scr('#screen-profile');
-  $('#btn-open').onclick    = () => $('#codebox').classList.remove('hide');
-  $('#btn-back-to-quiz').onclick = () => scr('#screen-quiz');
-  $('#btn-play-again').onclick   = () => startSession();
-  $('#btn-reset').onclick = () => { resetProgress(true); alert('Progress reset. You can replay from the start.'); };
-
-  // --- Session start / reset ---
-  function startSession(){
-    if (DEV_MODE) { S = { init:true, avatar:S.avatar || '😎✨', xp:0, level:1, streak:0, completed:{}, areasMode:S.areasMode||'focus', chosenAreas:S.chosenAreas||P.focusAreas.slice() }; save(); }
-    scr('#screen-quiz');
-    renderBars();
-    servedCount = 0; retryQueue = []; idx = -1; answeredThisQuestion=false; awaitingManualAdvance=false;
-    next(true);
-  }
-  function resetProgress(keepAvatar){
-    S = { init:true, avatar: keepAvatar ? (S.avatar || '😎✨') : '😎✨', xp:0, level:1, streak:0, completed:{}, areasMode:S.areasMode||'focus', chosenAreas:S.chosenAreas||P.focusAreas.slice() };
-    save(); renderBars();
-  }
-
-  // --- Allowed areas ---
-  function allowedAreas(){
-    const picked = (S.chosenAreas && S.chosenAreas.length) ? S.chosenAreas : P.focusAreas.slice();
-    return new Set(picked);
-  }
-  function nextIndex(){
-    const allow = allowedAreas();
-    const ready = retryQueue.findIndex(it => it.when <= servedCount && !S.completed[it.idx] && allow.has(QUESTIONS[it.idx].area));
+  function pickNextIndex(){
+    // 1) any retry ready?
+    const ready = retryQueue.findIndex(it => it.when <= servedCount && !S.completed[it.idx]);
     if (ready !== -1) return retryQueue.splice(ready,1)[0].idx;
-    const i = QUESTIONS.findIndex((q,ii)=>!S.completed[ii] && ii!==idx && allow.has(q.area));
-    if (i !== -1) return i;
-    if (retryQueue.length){
-      const any = retryQueue.find(it => allow.has(QUESTIONS[it.idx].area) && !S.completed[it.idx]);
-      if (any) return any.idx;
-    }
+
+    // 2) first unseen from allowed areas
+    const allowed = allowedQuestionIndices();
+    const i = allowed.find(ii => !S.completed[ii] && ii!==idx);
+    if (i !== undefined && i !== -1) return i;
+
+    // 3) pending retries at all?
+    if (retryQueue.length) return retryQueue[0].idx;
+
+    // 4) done
     return -1;
   }
 
-  // --- Quiz flow ---
+  /* =========================
+     KID UI
+     ========================= */
+  function updateKidGreeting(){
+    const name = P.preferredName?.trim();
+    $('#kidGreeting').textContent = name ? `Hey ${name}, ready to play?` : 'Ready to play?';
+    const enabled = (P.allowedAreas && P.allowedAreas.length) ? P.allowedAreas : AREAS.map(a=>a.id);
+    const fancy = enabled.map(id => AREAS.find(a=>a.id===id)?.icon + ' ' + areaName(id)).slice(0,3);
+    $('#questTagline').textContent = `Today’s quest pulls from: ${fancy.join(' · ')}`;
+  }
+  updateKidGreeting();
+
+  $('#btn-start').onclick = () => { startSession(); };
+  $('#btn-exit').onclick  = () => scr('#screen-start');
+  $('#btn-next').onclick  = () => next(true);
+  $('#btn-reward').onclick= () => scr('#screen-reward');
+  $('#btn-profile').onclick=() => scr('#screen-profile');
+  $('#btn-open').onclick  = () => $('#codebox').classList.remove('hide');
+  $('#btn-back-to-quiz').onclick = () => scr('#screen-quiz');
+  $('#btn-play-again').onclick   = () => startSession();
+  $('#btn-reset').onclick = () => { S = { init:true, xp:0, level:1, streak:0, completed:{} }; saveProgress(); renderBars(); alert('Progress reset.'); };
+
+  function startSession(){
+    // In dev mode, start each session fresh at 0 points
+    if (DEV_MODE) { S = { init:true, xp:0, level:1, streak:0, completed:{} }; saveProgress(); }
+    scr('#screen-quiz');
+    renderBars();
+    servedCount = 0; retryQueue = []; idx = -1;
+    // show today’s quest (random allowed area name)
+    const allowed = allowedQuestionIndices();
+    const pick = allowed.length ? QUESTIONS[allowed[Math.floor(Math.random()*allowed.length)]].area : AREAS[0].id;
+    $('#questPill').textContent = `${AREAS.find(a=>a.id===pick)?.icon || '🧭'} Today’s Quest`;
+    next(true);
+  }
+
   function next(manual=false){
-    if (awaitingManualAdvance && !manual) return; // ignore stray calls
+    if (awaitingManualAdvance && !manual) return; // ignore any stray calls
     $('#btn-next').disabled = true;
     answeredThisQuestion = false;
     awaitingManualAdvance = false;
 
-    const i = nextIndex();
-    if (i === -1) {
-      if (DEV_MODE) { startSession(); return; } // loop in dev
-      scr('#screen-cooldown'); return;
-    }
+    const i = pickNextIndex();
+    if (i === -1) { scr('#screen-cooldown'); return; }
 
     idx = i; servedCount++;
     const q = QUESTIONS[idx];
-    $('#qtext').textContent = `${areaLabel(q.area)}  •  ${q.q}`;
+    $('#qtext').textContent = q.q + `  —  (${areaName(q.area)})`;
     const box = $('#answers'); box.innerHTML = '';
     q.a.forEach((t,i)=>{
       const d = document.createElement('div');
@@ -513,7 +338,7 @@
     const q = QUESTIONS[idx];
     $$('.answer').forEach(a=>a.onclick=null);
     const correct = (choiceIndex === q.c);
-    const reason = q.e?.[choiceIndex] || (correct ? "Good call." : "Not ideal—let's try a different approach next time.");
+    const reason = q.e?.[choiceIndex] || (correct ? "Good call." : "Not ideal—try a different approach next time.");
 
     if (correct){
       el.classList.add('correct');
@@ -529,34 +354,114 @@
       const better = q.a[q.c];
       $('#feedback').innerHTML = `❌ ${reason} <br><span class="meta">Try next time: “${better}”.</span>`;
     }
-
-    save(); renderBars();
+    saveProgress(); renderBars();
     awaitingManualAdvance = true;
     $('#btn-next').disabled = false;
   }
 
-  function award(){ S.xp = (S.xp||0) + 10; S.level = 1 + Math.floor((S.xp||0)/100); }
-  function renderBars(){ $('#streak').textContent=S.streak||0; $('#xptext').textContent=`XP ${S.xp||0}`; $('#level').textContent=S.level||1; $('#xpfill').style.width=((S.xp%100))+'%'; }
-  function areaLabel(id){ const a = AREAS.find(x=>x.id===id); return a ? `${a.icon} ${a.name}` : 'Practice'; }
+  /* =========================
+     PARENT: PIN & DASHBOARD
+     ========================= */
+  const modalRoot = $('#modalRoot'), modalTitle = $('#modalTitle'), modalBody = $('#modalBody'), modalBtns = $('#modalBtns');
 
-  // --- Confetti ---
-  function confetti(){
-    const c=document.getElementById('confetti');
-    for(let i=0;i<22;i++){
-      const s=document.createElement('span'); s.className='piece';
-      s.textContent=['✨','💫','🌟','🎉','⭐'][Math.floor(Math.random()*5)];
-      s.style.left=(Math.random()*100)+'%'; s.style.animationDelay=(Math.random()*0.25)+'s';
-      c.appendChild(s); setTimeout(()=>s.remove(),1400);
-    }
+  function openModal(title, bodyHTML, buttons){
+    modalTitle.textContent = title;
+    modalBody.innerHTML = bodyHTML;
+    modalBtns.innerHTML = '';
+    buttons.forEach(b=>{
+      const btn = document.createElement('button');
+      btn.className = 'btn' + (b.ghost ? ' ghost' : '');
+      btn.textContent = b.text;
+      btn.onclick = b.onClick;
+      modalBtns.appendChild(btn);
+    });
+    modalRoot.classList.remove('hide');
+  }
+  function closeModal(){ modalRoot.classList.add('hide'); }
+
+  function showCreatePin(){
+    openModal('Create Parent PIN', `
+      <div class="formrow"><label>PIN</label><input type="password" maxlength="4" class="pin" id="pin1" inputmode="numeric" placeholder="4 digits"></div>
+      <div class="formrow"><label>Confirm</label><input type="password" maxlength="4" class="pin" id="pin2" inputmode="numeric" placeholder="4 digits"></div>
+      <p class="small">This PIN is stored only on this device.</p>
+    `, [
+      {text:'Cancel', ghost:true, onClick:()=>closeModal()},
+      {text:'OK', onClick:()=>{
+        const a = $('#pin1').value.trim(), b=$('#pin2').value.trim();
+        if (!/^\d{4}$/.test(a)) return alert('Please enter a 4-digit PIN.');
+        if (a!==b) return alert('PINs do not match.');
+        P.pinHash = hashPin(a); saveParent(); closeModal(); showParentDash();
+      }}
+    ]);
   }
 
-  // --- Init ---
-  function init(){
-    refreshHello();
-    buildKidAreas();
-    if (PARENT_MODE){ renderParentChips(); scr('#screen-parent'); }
+  function showEnterPin(){
+    openModal('Parent PIN', `
+      <div class="formrow"><label>Enter PIN</label><input type="password" maxlength="4" class="pin" id="pinIn" inputmode="numeric" placeholder="4 digits"></div>
+      <p class="small">Forgot it? Clear site data for github.io to reset.</p>
+    `, [
+      {text:'Cancel', ghost:true, onClick:()=>closeModal()},
+      {text:'Unlock', onClick:()=>{
+        const a = $('#pinIn').value.trim();
+        if (!/^\d{4}$/.test(a)) return alert('Please enter your 4-digit PIN.');
+        if (hashPin(a) !== P.pinHash) return alert('Incorrect PIN.');
+        closeModal(); showParentDash();
+      }}
+    ]);
   }
-  init();
+
+  function showParentDash(){
+    const checkboxes = AREAS.map(a=>{
+      const checked = (P.allowedAreas||[]).includes(a.id) ? 'checked' : '';
+      return `<label class="check"><input type="checkbox" data-area="${a.id}" ${checked}/> <span>${a.icon} ${a.name}</span></label>`;
+    }).join('');
+
+    openModal('Parent Dashboard', `
+      <div class="formrow">
+        <label>Preferred name</label>
+        <input id="prefName" class="input" placeholder="What should the app call your child?" value="${(P.preferredName||'').replace(/"/g,'&quot;')}">
+      </div>
+
+      <div class="formrow" style="align-items:start">
+        <label>Focus areas</label>
+        <div class="checkgrid">${checkboxes}</div>
+      </div>
+
+      <div class="formrow">
+        <label>Quick actions</label>
+        <div class="row">
+          <button class="btn ghost" id="qaReset">Reset Progress</button>
+          <button class="btn ghost" id="qaAll">Select All</button>
+          <button class="btn ghost" id="qaNone">Clear All</button>
+        </div>
+      </div>
+      <p class="small">Changes apply immediately and only affect this device.</p>
+    `, [
+      {text:'Close', ghost:true, onClick:()=>{ applyParentEdits(); closeModal(); }},
+      {text:'Save', onClick:()=>{ applyParentEdits(true); closeModal(); }}
+    ]);
+
+    $('#qaReset').onclick = ()=>{ S = { init:true, xp:0, level:1, streak:0, completed:{} }; saveProgress(); alert('Progress reset.'); };
+    $('#qaAll').onclick   = ()=>{$$('input[data-area]').forEach(cb=>cb.checked=true);};
+    $('#qaNone').onclick  = ()=>{$$('input[data-area]').forEach(cb=>cb.checked=false);};
+  }
+
+  function applyParentEdits(showAlert){
+    P.preferredName = $('#prefName').value.trim();
+    P.allowedAreas = $$('input[data-area]').filter(cb=>cb.checked).map(cb=>cb.getAttribute('data-area'));
+    saveParent();
+    updateKidGreeting();
+    if (showAlert) alert('Saved.');
+  }
+
+  $('#btn-parent').onclick = ()=>{
+    if (BYPASS_PARENT) return showParentDash();
+    if (!P.pinHash) return showCreatePin();
+    showEnterPin();
+  };
+
+  // Dismiss modal by clicking backdrop (optional)
+  modalRoot.addEventListener('click', (e)=>{ if (e.target===modalRoot) closeModal(); });
 </script>
 </body>
 </html>
