@@ -3,19 +3,22 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Chattr XP • Neon Preview (v8)</title>
+<title>Chattr XP • Neon Preview (v10)</title>
 <style>
   :root { --bg:#111216; --surface:#1E1F24; --text:#F8FAFC; --primary:#0EA5E9; --secondary:#EC4899; --success:#10B981; --danger:#ef4444; --muted:#94a3b8; }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
   .wrap{min-height:100dvh;display:flex;align-items:center;justify-content:center}
-  .card{width:min(720px,92vw);background:var(--surface);border-radius:20px;padding:20px 18px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  .card{width:min(860px,94vw);background:var(--surface);border-radius:20px;padding:20px 18px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
   h1,h2,h3{margin:8px 0}.center{text-align:center}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
   .btn{background:var(--primary);color:#fff;border:0;padding:12px 16px;border-radius:12px;cursor:pointer;font-weight:600;transition:transform .16s}
   .btn:disabled{opacity:.5;cursor:not-allowed}
   .btn:hover{transform:translateY(-1px)}
   .ghost{background:transparent;border:1px solid var(--muted);color:var(--text)}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+  .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+  .chip{padding:10px 12px;border:1px solid #2a2e36;border-radius:12px;cursor:pointer}
+  .chip.sel{border-color:var(--secondary);outline:2px solid rgba(236,72,153,.35)}
   .answer{padding:14px;background:#20232a;border-radius:14px;cursor:pointer;user-select:none;transition:transform .12s,background .12s}
   .answer:hover{transform:scale(1.02);background:#262a33}
   .correct{background:var(--success)!important}
@@ -32,35 +35,102 @@
   .confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden}
   .piece{position:absolute;font-size:22px;animation:fall 1.2s linear forwards}
   @keyframes fall{to{transform:translateY(100vh) rotate(360deg);opacity:0}}
+  input[type="text"]{width:100%;padding:10px;border-radius:10px;border:1px solid #2a2e36;background:#17181c;color:var(--text)}
+  label{font-size:14px;color:#cbd5e1}
+  .small{font-size:12px;color:#94a3b8}
+  select{width:100%;padding:10px;border-radius:10px;border:1px solid #2a2e36;background:#17181c;color:var(--text)}
 </style>
 </head>
 <body>
+
 <div class="wrap">
+
+  <!-- PARENT DASHBOARD -->
+  <div class="card hide" id="screen-parent">
+    <h2>Parent Dashboard</h2>
+    <p class="meta">Set your child’s preferred name and choose the focus areas. These settings shape what they practice.</p>
+    <div class="row" style="justify-content:space-between;margin-top:6px">
+      <div class="badge">v10</div>
+      <button class="btn ghost" id="btn-parent-exit">Done</button>
+    </div>
+
+    <div class="grid2" style="margin-top:12px">
+      <div>
+        <label for="childNameInput">Preferred Name</label>
+        <input id="childNameInput" type="text" placeholder="e.g., Jordan" />
+        <p class="small">This is how we’ll greet your child in the app.</p>
+      </div>
+      <div>
+        <label for="areaMode">When playing, default to</label>
+        <select id="areaMode">
+          <option value="focus">Only the selected focus areas</option>
+          <option value="all">All areas</option>
+        </select>
+        <p class="small">Kids can still switch on the Start screen.</p>
+      </div>
+    </div>
+
+    <h3 style="margin-top:6px">Focus Areas</h3>
+    <div class="grid3" id="parentAreas"></div>
+
+    <div class="row" style="margin-top:10px">
+      <button class="btn" id="btn-select-all">Select All</button>
+      <button class="btn ghost" id="btn-clear-all">Clear</button>
+      <button class="btn" id="btn-parent-save">Save Changes</button>
+    </div>
+
+    <div style="margin-top:16px">
+      <h3>What these areas mean</h3>
+      <ul class="small">
+        <li><b>Calm Skills</b> — pause, breathe, plan your next move.</li>
+        <li><b>Talk Builder</b> — openers, tone, empathy in 1-to-1 chats.</li>
+        <li><b>Group Chat IQ</b> — timing, memes, not flooding, reading the room.</li>
+        <li><b>Boundaries & Consent</b> — saying no, respecting no, check-ins.</li>
+        <li><b>Focus & Habits</b> — screens vs homework, routines, rewards.</li>
+        <li><b>Empathy Mode</b> — perspective taking, repair after harm.</li>
+        <li><b>School Collab</b> — teachers, group projects, study buddies.</li>
+        <li><b>Digital Drama</b> — rumors, screenshots, cooler heads.</li>
+        <li><b>Conflict Reset</b> — de-escalation, “repair” messages, bridges.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- START -->
   <div class="card" id="screen-start">
     <div class="center">
       <div class="emoji">✨</div>
       <h1>Chattr XP</h1>
       <p class="meta">Practice real-world social moves. Earn XP. Unlock codes.</p>
-      <p class="badge">Preview v8</p>
+      <p class="badge">Preview v10</p>
+
+      <h3 id="helloName" class="hide"></h3>
+
       <h3>Pick an avatar</h3>
       <div class="row avatars" id="avatars">
         <span>😎✨</span><span>🎧⚡</span><span>🏀💥</span><span>🎮⭐</span><span>📚💡</span><span>🧠🔓</span>
       </div>
+
+      <h3 style="margin-top:14px">What do you want to practice?</h3>
+      <div class="grid3" id="kidAreas"></div>
       <div class="spacer"></div>
       <button class="btn" id="btn-start">Start</button>
+
+      <div class="spacer"></div>
+      <p class="small">Parents: open the dashboard by using <code>?parent=1</code> in the link.</p>
     </div>
   </div>
 
+  <!-- QUIZ -->
   <div class="card hide" id="screen-quiz">
     <div class="row" style="justify-content:space-between">
       <div><span id="avatar" class="emoji">😎✨</span></div>
-      <div class="meta">🔥 Streak: <b id="streak">0</b></div>
+      <div class="meta"><span id="helloInline" class="hide"></span> 🔥 Streak: <b id="streak">0</b></div>
     </div>
     <div class="bar"><div id="xpfill"></div></div>
     <div class="meta"><span id="xptext">XP 0</span> · Level <span id="level">1</span></div>
 
     <h3 id="qtext" style="margin-top:10px"></h3>
-    <div class="grid" id="answers"></div>
+    <div class="grid2" id="answers"></div>
     <div class="meta" id="feedback" style="margin-top:6px"></div>
     <div class="row" style="justify-content:space-between;margin-top:12px">
       <button class="btn ghost" id="btn-exit">Exit</button>
@@ -68,6 +138,7 @@
     </div>
   </div>
 
+  <!-- COOLDOWN -->
   <div class="card hide" id="screen-cooldown">
     <div class="center">
       <h2>Nice work today 🔥</h2>
@@ -78,6 +149,7 @@
     </div>
   </div>
 
+  <!-- REWARD -->
   <div class="card hide" id="screen-reward">
     <div class="center">
       <h2>Rewards</h2>
@@ -93,6 +165,7 @@
     </div>
   </div>
 
+  <!-- PROFILE -->
   <div class="card hide" id="screen-profile">
     <div class="center">
       <h2>Profile</h2>
@@ -104,104 +177,212 @@
       </div>
     </div>
   </div>
+
 </div>
 
 <div id="confetti" class="confetti"></div>
 
 <script>
-  // --- Dev Mode: add ?dev=1 to the URL (each session starts from 0 points) ---
+  // --- Modes via URL ---
   const DEV_MODE = location.search.includes('dev=1');
+  const PARENT_MODE = location.search.includes('parent=1');
 
-  // === CONTENT AREA ===
-  // Put your real scenarios here. Each item:
-  // q = question/prompt
-  // a = answer choices
-  // e = explanations (one per answer), shown after the tap so kids can sit with the "why"
-  // c = index of the correct answer in "a"
+  // --- Focus Areas ---
+  const AREAS = [
+    {id:'calm',    name:'Calm Skills',       icon:'🧘'},
+    {id:'talk',    name:'Talk Builder',      icon:'💬'},
+    {id:'group',   name:'Group Chat IQ',     icon:'👥'},
+    {id:'bounds',  name:'Boundaries & Consent',icon:'🛑'},
+    {id:'focus',   name:'Focus & Habits',    icon:'🎯'},
+    {id:'empathy', name:'Empathy Mode',      icon:'🤝'},
+    {id:'school',  name:'School Collab',     icon:'🏫'},
+    {id:'drama',   name:'Digital Drama',     icon:'📱'},
+    {id:'reset',   name:'Conflict Reset',    icon:'🕊️'}
+  ];
+
+  // --- Demo questions with area tags + explanations ---
   const QUESTIONS = [
-    {
-      q: "A friend texts during homework time. What’s your move?",
-      a: ["Finish this section, then reply","Reply now, it’s quick","Ignore for hours","Send a meme instead"],
-      e: [
+    { area:'focus',
+      q:"A friend texts during homework time. What’s your move?",
+      a:["Finish this section, then reply","Reply now, it’s quick","Ignore for hours","Send a meme instead"],
+      e:[
         "You keep focus and still respond soon. Your brain switches tasks less, so you finish faster and sound calmer.",
         "Looks harmless, but it breaks focus. One quick reply becomes a thread and homework takes longer.",
         "They may feel ignored or worry you’re upset. Silence creates drama you don’t need.",
         "Off-topic and delays both tasks. Sends mixed signals and can seem dismissive."
-      ],
-      c: 0
+      ], c:0
     },
-    {
-      q: "You join a new group chat. Best first message?",
-      a: ["Hey, I’m new here! Nice to meet you all.","Spam emojis","Drop a hot take","Ask everyone’s full names"],
-      e: [
+    { area:'group',
+      q:"You join a new group chat. Best first message?",
+      a:["Hey, I’m new here! Nice to meet you all.","Spam emojis","Drop a hot take","Ask everyone’s full names"],
+      e:[
         "Friendly + low-pressure. You signal respect and invite normal conversation.",
         "Looks chaotic and attention-seeking; people may mute you immediately.",
         "High-conflict starts make a bad first impression and can split the group.",
         "Feels like an interrogation. Learn names naturally as people talk."
-      ],
-      c: 0
+      ], c:0
     },
-    {
-      q: "A classmate misreads your joke and gets upset. Best fix?",
-      a: ["Explain and apologize","Double down","Blame autocorrect","Leave the chat"],
-      e: [
+    { area:'empathy',
+      q:"A classmate misreads your joke and gets upset. Best fix?",
+      a:["Explain and apologize","Double down","Blame autocorrect","Leave the chat"],
+      e:[
         "You repair trust quickly. Owning it shows maturity and keeps the friendship.",
         "Escalates hurt feelings and makes you look mean on purpose.",
         "Dodges responsibility; they’ll feel you aren’t sincere.",
         "Looks like you don’t care and leaves the problem unsolved."
-      ],
-      c: 0
+      ], c:0
     },
-    {
-      q: "Someone cuts you off while speaking. What’s best?",
-      a: ["Wait, then calmly finish","Interrupt back","Stay silent","Walk out"],
-      e: [
+    { area:'talk',
+      q:"Someone cuts you off while speaking. What’s best?",
+      a:["Wait, then calmly finish","Interrupt back","Stay silent","Walk out"],
+      e:[
         "You set a respectful boundary and model good turn-taking.",
         "Turns it into a battle; everyone stops listening and tension rises.",
         "Your point gets lost and you teach people it’s okay to talk over you.",
         "Escalates the situation and can look disrespectful."
-      ],
-      c: 0
+      ], c:0
     },
-    {
-      q: "You forgot a friend’s birthday. What now?",
-      a: ["Apologize and make it up","Pretend you remembered","Blame your calendar","Ignore it"],
-      e: [
+    { area:'reset',
+      q:"You forgot a friend’s birthday. What now?",
+      a:["Apologize and make it up","Pretend you remembered","Blame your calendar","Ignore it"],
+      e:[
         "Honest + effort = trust repair. Small plan > long excuse.",
         "They’ll likely find out; trust drops more than if you were honest.",
         "Excuses feel weak and they may think you don’t value them.",
         "Signals they don’t matter to you, which can end friendships."
-      ],
-      c: 0
+      ], c:0
     }
   ];
-  // === END CONTENT ===
 
+  // --- Helpers ---
   const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
-  const scr = id => { ['#screen-start','#screen-quiz','#screen-cooldown','#screen-reward','#screen-profile'].forEach(sel => $(sel).classList.add('hide')); $(id).classList.remove('hide'); };
+  const scr = id => { ['#screen-parent','#screen-start','#screen-quiz','#screen-cooldown','#screen-reward','#screen-profile'].forEach(sel => $(sel).classList.add('hide')); $(id).classList.remove('hide'); };
 
-  // Persisted state
+  // --- Storage ---
   let S = JSON.parse(localStorage.getItem('cxp')||'{}');
-  if (!S.init) { S = { init:true, avatar:'😎✨', xp:0, level:1, streak:0, completed:{} }; save(); }
+  if (!S.init) { S = { init:true, avatar:'😎✨', xp:0, level:1, streak:0, completed:{}, areasMode:'focus', chosenAreas:AREAS.map(a=>a.id) }; save(); }
+  let P = JSON.parse(localStorage.getItem('cxp_parent')||'{}'); // parent settings
+  if (!P.init) { P = { init:true, childName:'', focusAreas:AREAS.map(a=>a.id), areaMode:'focus' }; saveParent(); }
 
-  // Retry logic (missed questions reappear later)
-  const RETRY_GAP = 2;        // how many questions later to retry a miss (tweak if you like)
-  let retryQueue = [];        // { idx, when }
+  function save(){ localStorage.setItem('cxp', JSON.stringify(S)); }
+  function saveParent(){ localStorage.setItem('cxp_parent', JSON.stringify(P)); }
+
+  // --- Retry logic / quiz state ---
+  const RETRY_GAP = 2;
+  let retryQueue = [];  // { idx, when }
   let servedCount = 0;
   let idx = -1;
   let answeredThisQuestion = false;
-  let awaitingManualAdvance = false;  // lock so only the Next button can advance
+  let awaitingManualAdvance = false;
 
-  // Avatar picker
+  // --- Build Parent UI ---
+  const parentAreaBox = $('#parentAreas');
+  AREAS.forEach(a=>{
+    const div = document.createElement('div');
+    div.className = 'chip';
+    div.dataset.id = a.id;
+    div.textContent = `${a.icon} ${a.name}`;
+    parentAreaBox.appendChild(div);
+  });
+  function renderParentChips(){
+    $$('#parentAreas .chip').forEach(ch=>{
+      const on = P.focusAreas.includes(ch.dataset.id);
+      ch.classList.toggle('sel', on);
+    });
+    $('#childNameInput').value = P.childName || '';
+    $('#areaMode').value = P.areaMode || 'focus';
+  }
+  parentAreaBox.addEventListener('click',(e)=>{
+    const chip = e.target.closest('.chip'); if(!chip) return;
+    const id = chip.dataset.id;
+    if (P.focusAreas.includes(id)) P.focusAreas = P.focusAreas.filter(x=>x!==id);
+    else P.focusAreas.push(id);
+    renderParentChips();
+  });
+  $('#btn-select-all').onclick = ()=>{ P.focusAreas = AREAS.map(a=>a.id); renderParentChips(); };
+  $('#btn-clear-all').onclick = ()=>{ P.focusAreas = []; renderParentChips(); };
+  $('#btn-parent-save').onclick = ()=>{
+    P.childName = ($('#childNameInput').value || '').trim();
+    P.areaMode = $('#areaMode').value;
+    saveParent();
+    alert('Saved!');
+  };
+  $('#btn-parent-exit').onclick = ()=>{ scr('#screen-start'); refreshHello(); buildKidAreas(); };
+
+  // --- Build Kid area chips based on parent focus selection ---
+  const kidAreaBox = $('#kidAreas');
+  function buildKidAreas(){
+    kidAreaBox.innerHTML = '';
+    const enabled = P.focusAreas.length ? P.focusAreas : AREAS.map(a=>a.id);
+    // special "All My Focus Areas"
+    const allDiv = document.createElement('div');
+    allDiv.className = 'chip';
+    allDiv.dataset.id = '__all';
+    allDiv.textContent = '🌈 All My Focus Areas';
+    kidAreaBox.appendChild(allDiv);
+
+    AREAS.forEach(a=>{
+      if (!enabled.includes(a.id)) return; // hidden if parent disabled
+      const div = document.createElement('div');
+      div.className = 'chip';
+      div.dataset.id = a.id;
+      div.textContent = `${a.icon} ${a.name}`;
+      kidAreaBox.appendChild(div);
+    });
+
+    // Preselect based on parent default
+    const defaultIsAll = (P.areaMode || 'focus') === 'all';
+    selectKidAreas(defaultIsAll ? ['__all'] : enabled.slice()); // select all enabled if focus mode
+  }
+  function selectKidAreas(ids){
+    $$('#kidAreas .chip').forEach(ch=>{
+      ch.classList.toggle('sel', ids.includes(ch.dataset.id));
+    });
+    // store child’s play selection in S
+    if (ids.includes('__all')) { S.chosenAreas = P.focusAreas.slice(); }
+    else { S.chosenAreas = ids.slice(); }
+    save();
+  }
+  kidAreaBox.addEventListener('click',(e)=>{
+    const chip = e.target.closest('.chip'); if(!chip) return;
+    if (chip.dataset.id === '__all'){
+      selectKidAreas(['__all']);
+      return;
+    }
+    const current = $$('#kidAreas .chip.sel').map(x=>x.dataset.id);
+    const id = chip.dataset.id;
+    let next = current.includes(id) ? current.filter(x=>x!==id) : current.concat(id);
+    next = next.filter(x=>x!=='__all'); // if picking specifics, drop "all"
+    if (next.length===0) next = ['__all']; // never empty
+    selectKidAreas(next);
+  });
+
+  // --- Avatar picker ---
   $$('#avatars span').forEach(sp=>{
     if (sp.textContent === S.avatar) sp.classList.add('sel');
     sp.onclick = () => { $$('#avatars span').forEach(x=>x.classList.remove('sel')); sp.classList.add('sel'); S.avatar = sp.textContent; save(); };
   });
 
-  // Buttons
+  // --- Greeting with preferred name ---
+  function refreshHello(){
+    const name = (P.childName || '').trim();
+    const hello = $('#helloName');
+    const inline = $('#helloInline');
+    if (name){
+      hello.textContent = `Hi, ${name} 👋`;
+      hello.classList.remove('hide');
+      inline.textContent = `${name} •`;
+      inline.classList.remove('hide');
+    } else {
+      hello.classList.add('hide');
+      inline.classList.add('hide');
+    }
+  }
+
+  // --- Buttons (Kid flow) ---
   $('#btn-start').onclick   = () => { $('#avatar').textContent=S.avatar; $('#pAvatar').textContent=S.avatar; startSession(); };
   $('#btn-exit').onclick    = () => scr('#screen-start');
-  $('#btn-next').onclick    = () => next(true);                  // true = manual advance
+  $('#btn-next').onclick    = () => next(true);     // manual advance
   $('#btn-reward').onclick  = () => scr('#screen-reward');
   $('#btn-profile').onclick = () => scr('#screen-profile');
   $('#btn-open').onclick    = () => $('#codebox').classList.remove('hide');
@@ -209,48 +390,53 @@
   $('#btn-play-again').onclick   = () => startSession();
   $('#btn-reset').onclick = () => { resetProgress(true); alert('Progress reset. You can replay from the start.'); };
 
+  // --- Session start / reset ---
   function startSession(){
-    // In DEV_MODE, each session starts fresh at 0 points
-    if (DEV_MODE) { S = { init:true, avatar:S.avatar || '😎✨', xp:0, level:1, streak:0, completed:{} }; save(); }
+    if (DEV_MODE) { S = { init:true, avatar:S.avatar || '😎✨', xp:0, level:1, streak:0, completed:{}, areasMode:S.areasMode||'focus', chosenAreas:S.chosenAreas||P.focusAreas.slice() }; save(); }
     scr('#screen-quiz');
     renderBars();
-    servedCount = 0; retryQueue = []; idx = -1;
+    servedCount = 0; retryQueue = []; idx = -1; answeredThisQuestion=false; awaitingManualAdvance=false;
     next(true);
   }
-
   function resetProgress(keepAvatar){
-    S = { init:true, avatar: keepAvatar ? (S.avatar || '😎✨') : '😎✨', xp:0, level:1, streak:0, completed:{} };
+    S = { init:true, avatar: keepAvatar ? (S.avatar || '😎✨') : '😎✨', xp:0, level:1, streak:0, completed:{}, areasMode:S.areasMode||'focus', chosenAreas:S.chosenAreas||P.focusAreas.slice() };
     save(); renderBars();
   }
 
-  function pickNextIndex(){
-    const ready = retryQueue.findIndex(it => it.when <= servedCount && !S.completed[it.idx]);
+  // --- Pick & filter questions by areas ---
+  function allowedAreas(){
+    const picked = (S.chosenAreas && S.chosenAreas.length) ? S.chosenAreas : P.focusAreas.slice();
+    return new Set(picked);
+  }
+  function nextIndex(){
+    const allow = allowedAreas();
+    const ready = retryQueue.findIndex(it => it.when <= servedCount && !S.completed[it.idx] && allow.has(QUESTIONS[it.idx].area));
     if (ready !== -1) return retryQueue.splice(ready,1)[0].idx;
-    const i = QUESTIONS.findIndex((q,ii)=>!S.completed[ii] && ii!==idx);
+    const i = QUESTIONS.findIndex((q,ii)=>!S.completed[ii] && ii!==idx && allow.has(q.area));
     if (i !== -1) return i;
-    if (retryQueue.length) return retryQueue[0].idx;
+    if (retryQueue.length){
+      const any = retryQueue.find(it => allow.has(QUESTIONS[it.idx].area) && !S.completed[it.idx]);
+      if (any) return any.idx;
+    }
     return -1;
   }
 
+  // --- Quiz flow ---
   function next(manual=false){
-    // Ignore any accidental/old auto-calls while waiting for manual Next
-    if (awaitingManualAdvance && !manual) return;
-
+    if (awaitingManualAdvance && !manual) return; // ignore stray calls
     $('#btn-next').disabled = true;
     answeredThisQuestion = false;
     awaitingManualAdvance = false;
 
-    const i = pickNextIndex();
+    const i = nextIndex();
     if (i === -1) {
-      if (DEV_MODE) { startSession(); return; } // loop forever in dev
-      scr('#screen-cooldown');
-      return;
+      if (DEV_MODE) { startSession(); return; } // loop in dev
+      scr('#screen-cooldown'); return;
     }
 
     idx = i; servedCount++;
-
     const q = QUESTIONS[idx];
-    $('#qtext').textContent = q.q;
+    $('#qtext').textContent = `${areaLabel(q.area)}  •  ${q.q}`;
     const box = $('#answers'); box.innerHTML = '';
     q.a.forEach((t,i)=>{
       const d = document.createElement('div');
@@ -264,7 +450,7 @@
   }
 
   function choose(choiceIndex, el){
-    if (answeredThisQuestion) return; // one tap only
+    if (answeredThisQuestion) return;
     answeredThisQuestion = true;
 
     const q = QUESTIONS[idx];
@@ -288,16 +474,16 @@
     }
 
     save(); renderBars();
-
-    // Require manual Next; enable the button and set guard
     awaitingManualAdvance = true;
     $('#btn-next').disabled = false;
   }
 
   function award(){ S.xp = (S.xp||0) + 10; S.level = 1 + Math.floor((S.xp||0)/100); }
   function renderBars(){ $('#streak').textContent=S.streak||0; $('#xptext').textContent=`XP ${S.xp||0}`; $('#level').textContent=S.level||1; $('#xpfill').style.width=((S.xp%100))+'%'; }
-  function save(){ localStorage.setItem('cxp', JSON.stringify(S)); }
 
+  function areaLabel(id){ const a = AREAS.find(x=>x.id===id); return a ? `${a.icon} ${a.name}` : 'Practice'; }
+
+  // --- Confetti ---
   function confetti(){
     const c=document.getElementById('confetti');
     for(let i=0;i<22;i++){
@@ -307,6 +493,11 @@
       c.appendChild(s); setTimeout(()=>s.remove(),1400);
     }
   }
+
+  // --- Init ---
+  refreshHello();
+  buildKidAreas();
+  if (PARENT_MODE){ renderParentChips(); scr('#screen-parent'); }
 </script>
 </body>
 </html>
