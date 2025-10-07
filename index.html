@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Chattr XP • Neon Preview</title>
+<title>Chattr XP • Neon Preview (v8)</title>
 <style>
   :root { --bg:#111216; --surface:#1E1F24; --text:#F8FAFC; --primary:#0EA5E9; --secondary:#EC4899; --success:#10B981; --danger:#ef4444; --muted:#94a3b8; }
   *{box-sizing:border-box}
@@ -13,15 +13,24 @@
   h1,h2,h3{margin:8px 0}.center{text-align:center}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
   .btn{background:var(--primary);color:#fff;border:0;padding:12px 16px;border-radius:12px;cursor:pointer;font-weight:600;transition:transform .16s}
   .btn:disabled{opacity:.5;cursor:not-allowed}
-  .btn:hover{transform:translateY(-1px)} .ghost{background:transparent;border:1px solid var(--muted);color:var(--text)}
+  .btn:hover{transform:translateY(-1px)}
+  .ghost{background:transparent;border:1px solid var(--muted);color:var(--text)}
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
   .answer{padding:14px;background:#20232a;border-radius:14px;cursor:pointer;user-select:none;transition:transform .12s,background .12s}
-  .answer:hover{transform:scale(1.02);background:#262a33}.correct{background:var(--success)!important}.wrong{background:var(--danger)!important}
+  .answer:hover{transform:scale(1.02);background:#262a33}
+  .correct{background:var(--success)!important}
+  .wrong{background:var(--danger)!important}
   .bar{height:12px;width:100%;background:#2a2e36;border-radius:8px;overflow:hidden;margin:8px 0 4px}
   .bar>div{height:100%;width:0%;background:linear-gradient(90deg,var(--secondary),var(--primary));transition:width .28s}
-  .meta{color:var(--muted);font-size:14px}.emoji{font-size:38px}.avatars span{font-size:32px;padding:6px 10px;border-radius:10px;cursor:pointer}
-  .avatars span.sel{outline:2px solid var(--secondary)} .hide{display:none!important} .spacer{height:8px}
-  .confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden}.piece{position:absolute;font-size:22px;animation:fall 1.2s linear forwards}
+  .meta{color:var(--muted);font-size:14px}
+  .emoji{font-size:38px}
+  .avatars span{font-size:32px;padding:6px 10px;border-radius:10px;cursor:pointer}
+  .avatars span.sel{outline:2px solid var(--secondary)}
+  .hide{display:none!important}
+  .spacer{height:8px}
+  .badge{font-size:12px;color:#aaa}
+  .confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden}
+  .piece{position:absolute;font-size:22px;animation:fall 1.2s linear forwards}
   @keyframes fall{to{transform:translateY(100vh) rotate(360deg);opacity:0}}
 </style>
 </head>
@@ -32,6 +41,7 @@
       <div class="emoji">✨</div>
       <h1>Chattr XP</h1>
       <p class="meta">Practice real-world social moves. Earn XP. Unlock codes.</p>
+      <p class="badge">Preview v8</p>
       <h3>Pick an avatar</h3>
       <div class="row avatars" id="avatars">
         <span>😎✨</span><span>🎧⚡</span><span>🏀💥</span><span>🎮⭐</span><span>📚💡</span><span>🧠🔓</span>
@@ -99,10 +109,15 @@
 <div id="confetti" class="confetti"></div>
 
 <script>
-  // --- Dev Mode: add ?dev=1 to the URL ---
+  // --- Dev Mode: add ?dev=1 to the URL (each session starts from 0 points) ---
   const DEV_MODE = location.search.includes('dev=1');
 
-  // Questions with per-answer explanations
+  // === CONTENT AREA ===
+  // Put your real scenarios here. Each item:
+  // q = question/prompt
+  // a = answer choices
+  // e = explanations (one per answer), shown after the tap so kids can sit with the "why"
+  // c = index of the correct answer in "a"
   const QUESTIONS = [
     {
       q: "A friend texts during homework time. What’s your move?",
@@ -160,6 +175,7 @@
       c: 0
     }
   ];
+  // === END CONTENT ===
 
   const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
   const scr = id => { ['#screen-start','#screen-quiz','#screen-cooldown','#screen-reward','#screen-profile'].forEach(sel => $(sel).classList.add('hide')); $(id).classList.remove('hide'); };
@@ -168,12 +184,13 @@
   let S = JSON.parse(localStorage.getItem('cxp')||'{}');
   if (!S.init) { S = { init:true, avatar:'😎✨', xp:0, level:1, streak:0, completed:{} }; save(); }
 
-  // Retry logic
-  const RETRY_GAP = 2;        // how many questions later to retry a miss
+  // Retry logic (missed questions reappear later)
+  const RETRY_GAP = 2;        // how many questions later to retry a miss (tweak if you like)
   let retryQueue = [];        // { idx, when }
   let servedCount = 0;
   let idx = -1;
   let answeredThisQuestion = false;
+  let awaitingManualAdvance = false;  // lock so only the Next button can advance
 
   // Avatar picker
   $$('#avatars span').forEach(sp=>{
@@ -184,7 +201,7 @@
   // Buttons
   $('#btn-start').onclick   = () => { $('#avatar').textContent=S.avatar; $('#pAvatar').textContent=S.avatar; startSession(); };
   $('#btn-exit').onclick    = () => scr('#screen-start');
-  $('#btn-next').onclick    = () => next();
+  $('#btn-next').onclick    = () => next(true);                  // true = manual advance
   $('#btn-reward').onclick  = () => scr('#screen-reward');
   $('#btn-profile').onclick = () => scr('#screen-profile');
   $('#btn-open').onclick    = () => $('#codebox').classList.remove('hide');
@@ -194,44 +211,38 @@
 
   function startSession(){
     // In DEV_MODE, each session starts fresh at 0 points
-    if (DEV_MODE) {
-      S = { init:true, avatar:S.avatar || '😎✨', xp:0, level:1, streak:0, completed:{} };
-      save();
-    }
+    if (DEV_MODE) { S = { init:true, avatar:S.avatar || '😎✨', xp:0, level:1, streak:0, completed:{} }; save(); }
     scr('#screen-quiz');
     renderBars();
-    servedCount = 0;
-    retryQueue = [];
+    servedCount = 0; retryQueue = []; idx = -1;
     next(true);
   }
 
   function resetProgress(keepAvatar){
     S = { init:true, avatar: keepAvatar ? (S.avatar || '😎✨') : '😎✨', xp:0, level:1, streak:0, completed:{} };
-    save();
-    renderBars();
+    save(); renderBars();
   }
 
   function pickNextIndex(){
-    // 1) Ready retry?
     const ready = retryQueue.findIndex(it => it.when <= servedCount && !S.completed[it.idx]);
     if (ready !== -1) return retryQueue.splice(ready,1)[0].idx;
-    // 2) First unseen (skip current to avoid immediate repeat)
     const i = QUESTIONS.findIndex((q,ii)=>!S.completed[ii] && ii!==idx);
     if (i !== -1) return i;
-    // 3) Anything pending in retryQueue?
     if (retryQueue.length) return retryQueue[0].idx;
-    // 4) Nothing left
     return -1;
   }
 
-  function next(first=false){
+  function next(manual=false){
+    // Ignore any accidental/old auto-calls while waiting for manual Next
+    if (awaitingManualAdvance && !manual) return;
+
     $('#btn-next').disabled = true;
     answeredThisQuestion = false;
+    awaitingManualAdvance = false;
 
     const i = pickNextIndex();
     if (i === -1) {
-      // In dev mode, loop forever by restarting a fresh session
-      if (DEV_MODE) { startSession(); return; }
+      if (DEV_MODE) { startSession(); return; } // loop forever in dev
       scr('#screen-cooldown');
       return;
     }
@@ -249,17 +260,16 @@
       box.appendChild(d);
     });
     $('#feedback').textContent = '';
-    if (!first) window.scrollTo({top:0, behavior:'smooth'});
+    window.scrollTo({top:0, behavior:'smooth'});
   }
 
   function choose(choiceIndex, el){
-    if (answeredThisQuestion) return; // safeguard
+    if (answeredThisQuestion) return; // one tap only
     answeredThisQuestion = true;
 
     const q = QUESTIONS[idx];
     $$('.answer').forEach(a=>a.onclick=null);
     const correct = (choiceIndex === q.c);
-
     const reason = q.e?.[choiceIndex] || (correct ? "Good call." : "Not ideal—let's try a different approach next time.");
 
     if (correct){
@@ -272,13 +282,15 @@
     } else {
       el.classList.add('wrong');
       S.streak = 0;
-      retryQueue.push({ idx, when: servedCount + RETRY_GAP }); // queue for later
+      retryQueue.push({ idx, when: servedCount + RETRY_GAP });
       const better = q.a[q.c];
       $('#feedback').innerHTML = `❌ ${reason} <br><span class="meta">Try next time: “${better}”.</span>`;
     }
 
     save(); renderBars();
-    // Do NOT auto-advance; enable Next so they can read as long as they want
+
+    // Require manual Next; enable the button and set guard
+    awaitingManualAdvance = true;
     $('#btn-next').disabled = false;
   }
 
@@ -298,5 +310,3 @@
 </script>
 </body>
 </html>
-
-
