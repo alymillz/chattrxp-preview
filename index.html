@@ -3,76 +3,79 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Chattr XP • Neon Preview (v12)</title>
+<title>Chattr XP • Neon Preview (v13)</title>
 <style>
   :root { --bg:#111216; --surface:#1E1F24; --text:#F8FAFC; --primary:#0EA5E9; --secondary:#EC4899; --success:#10B981; --danger:#ef4444; --muted:#94a3b8; }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
   .wrap{min-height:100dvh;display:flex;align-items:center;justify-content:center}
-  .card{width:min(820px,92vw);background:var(--surface);border-radius:20px;padding:22px 18px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  .card{width:min(760px,92vw);background:var(--surface);border-radius:20px;padding:20px 18px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
   h1,h2,h3{margin:8px 0}.center{text-align:center}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .topbar{display:flex;align-items:center;justify-content:space-between}
+  .brand{display:flex;align-items:center;gap:8px}
+  .badge{font-size:12px;color:#9aa3b2}
+  .gear{
+    width:36px;height:36px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;
+    background:transparent;border:1px solid var(--muted);color:#cbd5e1;cursor:pointer
+  }
+  .gear:hover{transform:translateY(-1px)}
   .btn{background:var(--primary);color:#fff;border:0;padding:12px 16px;border-radius:12px;cursor:pointer;font-weight:600;transition:transform .16s}
   .btn:disabled{opacity:.5;cursor:not-allowed}
-  .btn:hover{transform:translateY(-1px)}
-  .ghost{background:transparent;border:1px solid var(--muted);color:var(--text)}
+  .btn:hover{transform:translateY(-1px)} .ghost{background:transparent;border:1px solid var(--muted);color:var(--text)}
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
   .answer{padding:14px;background:#20232a;border-radius:14px;cursor:pointer;user-select:none;transition:transform .12s,background .12s}
-  .answer:hover{transform:scale(1.02);background:#262a33}
-  .correct{background:var(--success)!important}
-  .wrong{background:var(--danger)!important}
+  .answer:hover{transform:scale(1.02);background:#262a33}.correct{background:var(--success)!important}.wrong{background:var(--danger)!important}
   .bar{height:12px;width:100%;background:#2a2e36;border-radius:8px;overflow:hidden;margin:8px 0 4px}
   .bar>div{height:100%;width:0%;background:linear-gradient(90deg,var(--secondary),var(--primary));transition:width .28s}
-  .meta{color:var(--muted);font-size:14px}
-  .emoji{font-size:38px}
-  .hide{display:none!important}
-  .spacer{height:8px}
-  .badge{font-size:12px;color:#aaa}
-  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
-  .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid #2a2e36;padding:6px 10px;border-radius:999px;font-size:12px;color:#cbd5e1}
-  .pill b{color:#fff}
-  .confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden}
-  .piece{position:absolute;font-size:22px;animation:fall 1.2s linear forwards}
+  .meta{color:var(--muted);font-size:14px}.emoji{font-size:38px}
+  .avatars span{font-size:32px;padding:6px 10px;border-radius:10px;cursor:pointer}.avatars span.sel{outline:2px solid var(--secondary)}
+  .hide{display:none!important}.spacer{height:8px}.bigspacer{height:14px}
+  /* modal */
+  .modal-outer{position:fixed;inset:0;display:none;place-items:center;background:rgba(0,0,0,.5);z-index:50}
+  .modal{width:min(780px,94vw);background:#191b22;border:1px solid #2c3140;border-radius:18px;padding:16px}
+  .modal h3{margin-top:0}
+  .form-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .chip{display:inline-flex;align-items:center;gap:6px;padding:8px 10px;border-radius:12px;border:1px solid #374151;cursor:pointer}
+  .chip input{transform:scale(1.1)}
+  .pin-input{letter-spacing:.35em;padding:10px 12px;border-radius:10px;border:1px solid #334155;background:#0f1116;color:#fff;width:120px;text-align:center}
+  .confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden}.piece{position:absolute;font-size:22px;animation:fall 1.2s linear forwards}
   @keyframes fall{to{transform:translateY(100vh) rotate(360deg);opacity:0}}
-
-  /* Parent modal */
-  .modalBack{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center}
-  .modal{width:min(720px,92vw);background:#17181d;border:1px solid #2a2e36;border-radius:16px;padding:16px}
-  .formrow{display:grid;grid-template-columns:140px 1fr;gap:10px;align-items:center;margin:8px 0}
-  .input, .pin{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #30333b;background:#1f2127;color:#fff}
-  .checkgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}
-  .check{display:flex;gap:8px;align-items:center;padding:10px;border:1px solid #30333b;border-radius:12px;background:#1b1d23}
-  .modalBtns{display:flex;justify-content:flex-end;gap:8px;margin-top:10px}
-  .small{font-size:12px;color:#94a3b8}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <!-- START (Kid) -->
   <div class="card" id="screen-start">
     <div class="topbar">
-      <div class="pill">🎮 <b>Chattr XP</b> • Neon • <span class="badge">v12</span></div>
-      <div class="row" style="gap:8px">
-        <button class="btn ghost" id="btn-parent">Parent</button>
+      <div class="brand">
+        <div class="emoji">✨</div>
+        <div>
+          <h1 style="margin:0">Chattr XP</h1>
+          <div class="badge">Preview v13</div>
+        </div>
       </div>
+      <button class="gear" id="btn-gear" title="Parent">
+        <!-- simple gear icon -->
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Zm8.94 3.5a7.53 7.53 0 0 0-.13-1.36l2.17-1.69-2-3.46-2.62 1.08a7.66 7.66 0 0 0-2.35-1.36L13.5 1h-4l-.51 3.21a7.66 7.66 0 0 0-2.35 1.36L4 3.49l-2 3.46 2.17 1.69c-.06.45-.1.9-.1 1.36s.04.91.1 1.36L2 13.41l2 3.46 2.64-1.09c.7.57 1.5 1.03 2.35 1.35l.51 3.22h4l.51-3.22c.85-.32 1.65-.78 2.35-1.35L21 16.87l2-3.46-2.17-1.4c.09-.45.11-.91.11-1.41Z" stroke="#cbd5e1" stroke-width="1.2" fill="none"/>
+        </svg>
+      </button>
     </div>
 
     <div class="center">
-      <div class="emoji" id="brand">✨</div>
-      <h1 id="kidGreeting">Ready to play?</h1>
-      <p class="meta" id="kidSub">Practice real-world moves. Earn XP. Unlock rewards.</p>
-
-      <!-- NOTE: Kid focus-area buttons removed by design -->
-      <div class="spacer"></div>
+      <p class="meta">Level up. Win more. Keep the streak.</p>
+      <h3>Choose your avatar</h3>
+      <div class="row avatars" id="avatars">
+        <span>😎✨</span><span>🎧⚡</span><span>🏀💥</span><span>🎮⭐</span><span>📚💡</span><span>🧠🔓</span>
+      </div>
+      <div class="bigspacer"></div>
       <button class="btn" id="btn-start">Play</button>
-      <p class="small" style="margin-top:8px" id="questTagline"></p>
     </div>
   </div>
 
-  <!-- QUIZ -->
   <div class="card hide" id="screen-quiz">
     <div class="row" style="justify-content:space-between">
-      <div class="pill" id="questPill">🧭 Today’s Quest</div>
-      <div class="meta">🔥 Streak: <b id="streak">0</b></div>
+      <div><span id="avatar" class="emoji">😎✨</span></div>
+      <div class="meta"><span id="kidName"></span> 🔥 Streak: <b id="streak">0</b></div>
     </div>
     <div class="bar"><div id="xpfill"></div></div>
     <div class="meta"><span id="xptext">XP 0</span> · Level <span id="level">1</span></div>
@@ -86,18 +89,16 @@
     </div>
   </div>
 
-  <!-- COOLDOWN (kept for later use) -->
   <div class="card hide" id="screen-cooldown">
     <div class="center">
-      <h2>Nice work today 🔥</h2>
-      <p class="meta">Your brain did reps. Come back tomorrow for more XP.</p>
+      <h2>Nice run 🔥</h2>
+      <p class="meta">Come back later for more XP.</p>
       <div class="spacer"></div>
       <button class="btn" id="btn-reward">View Reward</button>
       <button class="btn ghost" id="btn-profile">Profile</button>
     </div>
   </div>
 
-  <!-- REWARD (placeholder) -->
   <div class="card hide" id="screen-reward">
     <div class="center">
       <h2>Rewards</h2>
@@ -113,10 +114,10 @@
     </div>
   </div>
 
-  <!-- PROFILE -->
   <div class="card hide" id="screen-profile">
     <div class="center">
       <h2>Profile</h2>
+      <div class="emoji" id="pAvatar">😎✨</div>
       <p class="meta">Theme: Neon · Sounds: Off</p>
       <div class="row center" style="justify-content:center;gap:8px">
         <button class="btn" id="btn-play-again">Play Again</button>
@@ -126,189 +127,316 @@
   </div>
 </div>
 
-<!-- Parent PIN / Dashboard modal -->
-<div id="modalRoot" class="modalBack hide">
-  <div class="modal" id="modal">
-    <h3 id="modalTitle">Parent</h3>
-    <div id="modalBody"></div>
-    <div class="modalBtns" id="modalBtns"></div>
+<!-- Parent modal (PIN lock + Dashboard) -->
+<div class="modal-outer" id="parentModal">
+  <div class="modal">
+    <div class="topbar" style="margin-bottom:8px">
+      <h3 style="margin:0">Parent</h3>
+      <button class="gear" id="btn-close-parent">✕</button>
+    </div>
+    <div id="parentStepPIN">
+      <p class="meta" id="pinStatus">Enter PIN</p>
+      <input id="pinInput" class="pin-input" maxlength="8" placeholder="4–8 digits" inputmode="numeric" />
+      <div class="spacer"></div>
+      <div class="row">
+        <button class="btn" id="pinSubmit">Unlock</button>
+        <button class="btn ghost" id="pinSet">Set / Change PIN</button>
+      </div>
+      <p class="meta">Tip: First time? Click “Set / Change PIN”.</p>
+    </div>
+
+    <div id="parentStepDash" class="hide">
+      <h3 style="margin-top:4px">Dashboard</h3>
+      <div class="spacer"></div>
+      <label class="meta">Preferred name</label>
+      <div class="form-row">
+        <input id="prefName" class="pin-input" style="letter-spacing:0;width:240px" placeholder="e.g., Zeva" />
+      </div>
+
+      <div class="bigspacer"></div>
+      <label class="meta">Focus areas (hidden from kid view)</label>
+      <div class="form-row" id="areasBox">
+        <!-- chips inserted by JS -->
+      </div>
+
+      <div class="bigspacer"></div>
+      <div class="row">
+        <button class="btn" id="saveParent">Save</button>
+        <button class="btn ghost" id="lockParent">Lock</button>
+      </div>
+      <p class="meta">Saving affects the question pool immediately.</p>
+    </div>
   </div>
 </div>
 
 <div id="confetti" class="confetti"></div>
 
 <script>
-  /* =========================
-     CONFIG & DATA
-     ========================= */
-  const DEV_MODE = location.search.includes('dev=1');
-  const BYPASS_PARENT = location.search.includes('parent=1'); // helper for testing
+  /***************
+   * SETTINGS
+   ***************/
+  // During development we always start fresh (XP/streak/progress wiped each Play),
+  // but parent settings + PIN persist in a separate store.
+  const DEV_ALWAYS_RESET = true;
 
-  // Areas parents can enable (kids never see these)
-  const AREAS = [
-    {id:'social',     name:'Social Skills',        icon:'🫶'},
-    {id:'focus',      name:'Focus & Planning',     icon:'🧭'},
-    {id:'emotion',    name:'Emotion Regulation',   icon:'🌈'},
-    {id:'confidence', name:'Confidence & Voice',   icon:'📣'},
-    {id:'digital',    name:'Digital Citizenship',  icon:'💻'}
+  // Focus areas are invisible to kids; parents pick them. They map to tags on questions.
+  const FOCUS_AREAS = [
+    {id:"confidence", label:"Confidence"},
+    {id:"communication", label:"Communication"},
+    {id:"empathy", label:"Empathy"},
+    {id:"boundaries", label:"Boundaries"},
+    {id:"organization", label:"Organization"},
+    {id:"teamplay", label:"Team Play"},
   ];
 
-  // Questions tagged by area (sample set)
+  /***************
+   * QUESTION BANK
+   * (each question may include tags; if no tags, it’s always eligible)
+   ***************/
   const QUESTIONS = [
-    // social
-    {area:'social', q:"You join a new group chat. Best first message?",
-     a:["Hey, I’m new here! Nice to meet you all.","Spam emojis","Drop a hot take","Ask everyone’s full names"],
-     e:["Friendly + low-pressure. You signal respect and invite normal conversation.",
+    {
+      q: "A friend texts during homework time. What’s your move?",
+      a: ["Finish this section, then reply","Reply now, it’s quick","Ignore for hours","Send a meme instead"],
+      e: [
+        "You keep focus and still respond soon. Your brain switches tasks less, so you finish faster and sound calmer.",
+        "Looks harmless, but it breaks focus. One quick reply becomes a thread and homework takes longer.",
+        "They may feel ignored or worry you’re upset. Silence creates drama you don’t need.",
+        "Off-topic and delays both tasks. Sends mixed signals and can seem dismissive."
+      ],
+      c: 0,
+      tags:["organization","communication"]
+    },
+    {
+      q: "You join a new group chat. Best first message?",
+      a: ["Hey, I’m new here! Nice to meet you all.","Spam emojis","Drop a hot take","Ask everyone’s full names"],
+      e: [
+        "Friendly + low-pressure. You signal respect and invite normal conversation.",
         "Looks chaotic and attention-seeking; people may mute you immediately.",
         "High-conflict starts make a bad first impression and can split the group.",
-        "Feels like an interrogation. Learn names naturally as people talk."],
-     c:0},
-    {area:'social', q:"A classmate misreads your joke & gets upset. Best fix?",
-     a:["Explain and apologize","Double down","Blame autocorrect","Leave the chat"],
-     e:["You repair trust quickly. Owning it shows maturity and keeps the friendship.",
+        "Feels like an interrogation. Learn names naturally as people talk."
+      ],
+      c: 0,
+      tags:["communication","confidence","teamplay"]
+    },
+    {
+      q: "A classmate misreads your joke and gets upset. Best fix?",
+      a: ["Explain and apologize","Double down","Blame autocorrect","Leave the chat"],
+      e: [
+        "You repair trust quickly. Owning it shows maturity and keeps the friendship.",
         "Escalates hurt feelings and makes you look mean on purpose.",
         "Dodges responsibility; they’ll feel you aren’t sincere.",
-        "Looks like you don’t care and leaves the problem unsolved."],
-     c:0},
-
-    // focus
-    {area:'focus', q:"A friend texts during homework time. What’s your move?",
-     a:["Finish this section, then reply","Reply now, it’s quick","Ignore for hours","Send a meme instead"],
-     e:["You keep focus and still respond soon. Less task-switching = faster, calmer finish.",
-        "Breaks focus; one quick reply becomes a thread. Work time balloons.",
-        "They may feel ignored or worry you’re upset; silence creates drama.",
-        "Off-topic and delays both tasks; sends mixed signals."],
-     c:0},
-
-    // emotion
-    {area:'emotion', q:"You feel your frustration rising in a conversation. Best next step?",
-     a:["Pause and take a breath","Speak faster to get it out","Type in all caps","Quit the chat immediately"],
-     e:["A short pause resets tone so you can respond, not react.",
-        "Speed increases mistakes and can sound aggressive.",
-        "Looks like shouting; others get defensive.",
-        "Looks avoidant and leaves things unresolved."],
-     c:0},
-
-    // confidence
-    {area:'confidence', q:"Someone cuts you off while speaking. What’s best?",
-     a:["Wait, then calmly finish","Interrupt back","Stay silent","Walk out"],
-     e:["You set a respectful boundary and model good turn-taking.",
-        "Turns it into a battle; everyone stops listening.",
+        "Looks like you don’t care and leaves the problem unsolved."
+      ],
+      c: 0,
+      tags:["empathy","communication","boundaries"]
+    },
+    {
+      q: "Someone cuts you off while speaking. What’s best?",
+      a: ["Wait, then calmly finish","Interrupt back","Stay silent","Walk out"],
+      e: [
+        "You set a respectful boundary and model good turn-taking.",
+        "Turns it into a battle; everyone stops listening and tension rises.",
         "Your point gets lost and you teach people it’s okay to talk over you.",
-        "Escalates the situation and can look disrespectful."],
-     c:0},
-
-    // digital
-    {area:'digital', q:"You see a link offering free game credits. What now?",
-     a:["Don’t click; verify with the official site","Click fast before it expires","Give your login to claim","Share with the group first"],
-     e:["Scams often mimic real pages; check official channels first.",
-        "Urgency is a scam tactic; hurrying increases risk.",
-        "Never share credentials; accounts get stolen.",
-        "Spreading unknown links risks your friends, too."],
-     c:0}
+        "Escalates the situation and can look disrespectful."
+      ],
+      c: 0,
+      tags:["boundaries","confidence","communication"]
+    },
+    {
+      q: "You forgot a friend’s birthday. What now?",
+      a: ["Apologize and make it up","Pretend you remembered","Blame your calendar","Ignore it"],
+      e: [
+        "Honest + effort = trust repair. Small plan > long excuse.",
+        "They’ll likely find out; trust drops more than if you were honest.",
+        "Excuses feel weak and they may think you don’t value them.",
+        "Signals they don’t matter to you, which can end friendships."
+      ],
+      c: 0,
+      tags:["empathy","communication"]
+    }
   ];
 
-  /* =========================
-     STORAGE
-     ========================= */
+  /***************
+   * STORAGE
+   ***************/
+  // Game session state (gets reset often during dev)
+  const GAME_KEY = 'cxp_game';
+  // Parent-only settings (persist)
+  const PARENT_KEY = 'cxp_parent';
+
+  const Game = {
+    read(){ return JSON.parse(localStorage.getItem(GAME_KEY)||'{}'); },
+    write(o){ localStorage.setItem(GAME_KEY, JSON.stringify(o)); },
+    fresh(avatar){ return { init:true, avatar: avatar || '😎✨', xp:0, level:1, streak:0, completed:{} }; }
+  };
+  const Parent = {
+    read(){ return JSON.parse(localStorage.getItem(PARENT_KEY)||'{}'); },
+    write(o){ localStorage.setItem(PARENT_KEY, JSON.stringify(o)); }
+  };
+
+  /***************
+   * DOM SHORTCUTS
+   ***************/
   const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
   const scr = id => { ['#screen-start','#screen-quiz','#screen-cooldown','#screen-reward','#screen-profile'].forEach(sel => $(sel).classList.add('hide')); $(id).classList.remove('hide'); };
-  function saveProgress(){ localStorage.setItem('cxp', JSON.stringify(S)); }
-  function saveParent(){ localStorage.setItem('cxp_parent', JSON.stringify(P)); }
 
-  // Kid progress (local)
-  let S = JSON.parse(localStorage.getItem('cxp')||'{}');
-  if (!S.init) { S = { init:true, xp:0, level:1, streak:0, completed:{}}; saveProgress(); }
+  /***************
+   * GLOBALS
+   ***************/
+  let S = Game.read();
+  let P = Parent.read();
+  if (!S.init) { S = Game.fresh(); Game.write(S); }
+  if (!P.init) {
+    P = { init:true, pin:null, areas:[], preferredName:'' };
+    Parent.write(P);
+  }
 
-  // Parent settings (local)
-  let P = JSON.parse(localStorage.getItem('cxp_parent')||'{}');
-  if (!P.init) { P = { init:true, pinHash:null, preferredName:'', allowedAreas:AREAS.map(a=>a.id) }; saveParent(); }
+  // DEV: always start fresh (but keep avatar)
+  if (DEV_ALWAYS_RESET) {
+    S = Game.fresh(S.avatar);
+    Game.write(S);
+  }
 
-  /* =========================
-     RUNTIME STATE
-     ========================= */
-  const POINTS_PER_CORRECT = 10;
-  const RETRY_GAP = 2; // missed question reappears after N other serves
-  let retryQueue = []; // {idx, when}
+  // Retry logic
+  const RETRY_GAP = 2;        // how many questions later to retry a miss
+  let retryQueue = [];        // { idx, when }
   let servedCount = 0;
   let idx = -1;
-  let awaitingManualAdvance = false;
   let answeredThisQuestion = false;
+  let awaitingManualAdvance = false;  // lock so only the Next button can advance
 
-  /* =========================
-     HELPERS
-     ========================= */
-  const hashPin = pin => pin.split('').reduce((a,ch)=> (a*31 + ch.charCodeAt(0))>>>0, 7) ^ 0xa5a5a5a5;
-  const areaName = id => AREAS.find(a=>a.id===id)?.name || id;
-  function renderBars(){ $('#streak').textContent=S.streak||0; $('#xptext').textContent=`XP ${S.xp||0}`; $('#level').textContent=S.level||1; $('#xpfill').style.width=((S.xp%100))+'%'; }
-  function award(){ S.xp=(S.xp||0)+POINTS_PER_CORRECT; S.level = 1 + Math.floor((S.xp||0)/100); }
-  function confetti(){
-    const c=$('#confetti');
-    for(let i=0;i<22;i++){
-      const s=document.createElement('span'); s.className='piece';
-      s.textContent=['✨','💫','🌟','🎉','⭐'][Math.floor(Math.random()*5)];
-      s.style.left=(Math.random()*100)+'%'; s.style.animationDelay=(Math.random()*0.25)+'s';
-      c.appendChild(s); setTimeout(()=>s.remove(),1400);
-    }
-  }
-  function allowedQuestionIndices(){
-    const set = (P.allowedAreas && P.allowedAreas.length) ? new Set(P.allowedAreas) : new Set(AREAS.map(a=>a.id));
-    return QUESTIONS.map((q,i)=> set.has(q.area) ? i : -1).filter(i=>i!==-1);
-  }
-  function pickNextIndex(){
-    // 1) any retry ready?
-    const ready = retryQueue.findIndex(it => it.when <= servedCount && !S.completed[it.idx]);
-    if (ready !== -1) return retryQueue.splice(ready,1)[0].idx;
+  // Avatar picker
+  $$('#avatars span').forEach(sp=>{
+    if (sp.textContent === S.avatar) sp.classList.add('sel');
+    sp.onclick = () => { $$('#avatars span').forEach(x=>x.classList.remove('sel')); sp.classList.add('sel'); S.avatar = sp.textContent; Game.write(S); };
+  });
 
-    // 2) first unseen from allowed areas
-    const allowed = allowedQuestionIndices();
-    const i = allowed.find(ii => !S.completed[ii] && ii!==idx);
-    if (i !== undefined && i !== -1) return i;
-
-    // 3) pending retries at all?
-    if (retryQueue.length) return retryQueue[0].idx;
-
-    // 4) done
-    return -1;
-  }
-
-  /* =========================
-     KID UI
-     ========================= */
-  function updateKidGreeting(){
-    const name = P.preferredName?.trim();
-    $('#kidGreeting').textContent = name ? `Hey ${name}, ready to play?` : 'Ready to play?';
-    const enabled = (P.allowedAreas && P.allowedAreas.length) ? P.allowedAreas : AREAS.map(a=>a.id);
-    const fancy = enabled.map(id => AREAS.find(a=>a.id===id)?.icon + ' ' + areaName(id)).slice(0,3);
-    $('#questTagline').textContent = `Today’s quest pulls from: ${fancy.join(' · ')}`;
-  }
-  updateKidGreeting();
-
-  $('#btn-start').onclick = () => { startSession(); };
-  $('#btn-exit').onclick  = () => scr('#screen-start');
-  $('#btn-next').onclick  = () => next(true);
-  $('#btn-reward').onclick= () => scr('#screen-reward');
-  $('#btn-profile').onclick=() => scr('#screen-profile');
-  $('#btn-open').onclick  = () => $('#codebox').classList.remove('hide');
+  // Buttons
+  $('#btn-start').onclick   = () => { $('#avatar').textContent=S.avatar; $('#pAvatar').textContent=S.avatar; startSession(); };
+  $('#btn-exit').onclick    = () => scr('#screen-start');
+  $('#btn-next').onclick    = () => next(true);                  // true = manual advance
+  $('#btn-reward').onclick  = () => scr('#screen-reward');
+  $('#btn-profile').onclick = () => scr('#screen-profile');
+  $('#btn-open').onclick    = () => $('#codebox').classList.remove('hide');
   $('#btn-back-to-quiz').onclick = () => scr('#screen-quiz');
   $('#btn-play-again').onclick   = () => startSession();
-  $('#btn-reset').onclick = () => { S = { init:true, xp:0, level:1, streak:0, completed:{} }; saveProgress(); renderBars(); alert('Progress reset.'); };
+  $('#btn-reset').onclick = () => { resetProgress(true); alert('Progress reset. You can replay from the start.'); };
 
+  // Gear / Parent modal
+  const modal = $('#parentModal');
+  $('#btn-gear').onclick = () => { openParent(); };
+  $('#btn-close-parent').onclick = () => { modal.style.display='none'; };
+
+  // PIN step
+  $('#pinSubmit').onclick = doPinSubmit;
+  $('#pinSet').onclick = doPinSet;
+
+  // Dashboard step
+  $('#saveParent').onclick = saveParent;
+  $('#lockParent').onclick = () => { $('#parentStepDash').classList.add('hide'); $('#parentStepPIN').classList.remove('hide'); $('#pinStatus').textContent = 'Locked'; };
+
+  // Build area chips
+  const areasBox = $('#areasBox');
+  FOCUS_AREAS.forEach(a=>{
+    const label = document.createElement('label');
+    label.className='chip';
+    label.innerHTML = `<input type="checkbox" value="${a.id}"> ${a.label}`;
+    areasBox.appendChild(label);
+  });
+
+  function openParent(){
+    modal.style.display='grid';
+    // reset views
+    $('#parentStepPIN').classList.remove('hide');
+    $('#parentStepDash').classList.add('hide');
+    $('#pinStatus').textContent = P.pin ? 'Enter PIN' : 'No PIN set';
+    $('#pinInput').value='';
+  }
+
+  function doPinSubmit(){
+    const val = ($('#pinInput').value||'').trim();
+    if (!P.pin) { $('#pinStatus').textContent = 'No PIN set. Click “Set / Change PIN”.'; return; }
+    if (val === P.pin) {
+      gotoDash();
+    } else {
+      $('#pinStatus').textContent = 'Incorrect PIN';
+    }
+  }
+
+  function doPinSet(){
+    const val = ($('#pinInput').value||'').trim();
+    if (!/^\d{4,8}$/.test(val)) { $('#pinStatus').textContent='PIN must be 4–8 digits'; return; }
+    P.pin = val;
+    Parent.write(P);
+    $('#pinStatus').textContent='PIN saved';
+    gotoDash();
+  }
+
+  function gotoDash(){
+    $('#parentStepPIN').classList.add('hide');
+    $('#parentStepDash').classList.remove('hide');
+    // fill fields
+    $('#prefName').value = P.preferredName || '';
+    // set chips
+    $$('#areasBox input[type=checkbox]').forEach(cb=>{
+      cb.checked = (P.areas||[]).includes(cb.value);
+    });
+  }
+
+  function saveParent(){
+    P.preferredName = ($('#prefName').value||'').trim();
+    P.areas = $$('#areasBox input[type=checkbox]:checked').map(cb=>cb.value);
+    Parent.write(P);
+    // small visual confirm
+    alert('Saved.');
+  }
+
+  // Start a session (resets progress while keeping avatar)
   function startSession(){
-    // In dev mode, start each session fresh at 0 points
-    if (DEV_MODE) { S = { init:true, xp:0, level:1, streak:0, completed:{} }; saveProgress(); }
+    if (DEV_ALWAYS_RESET) {
+      S = Game.fresh(S.avatar);
+      Game.write(S);
+    }
     scr('#screen-quiz');
     renderBars();
     servedCount = 0; retryQueue = []; idx = -1;
-    // show today’s quest (random allowed area name)
-    const allowed = allowedQuestionIndices();
-    const pick = allowed.length ? QUESTIONS[allowed[Math.floor(Math.random()*allowed.length)]].area : AREAS[0].id;
-    $('#questPill').textContent = `${AREAS.find(a=>a.id===pick)?.icon || '🧭'} Today’s Quest`;
+    // kid header preferred name
+    $('#kidName').textContent = P.preferredName ? `Player: ${P.preferredName}` : '';
     next(true);
+  }
+
+  function resetProgress(keepAvatar){
+    S = Game.fresh(keepAvatar ? (S.avatar || '😎✨') : '😎✨');
+    Game.write(S);
+    renderBars();
+  }
+
+  // Filtering by parent-picked areas
+  function isQuestionEligible(q){
+    const chosen = P.areas || [];
+    if (!chosen.length) return true; // if parent picked none, show all
+    const tags = q.tags || [];
+    return tags.some(t => chosen.includes(t));
+  }
+
+  function pickNextIndex(){
+    // 1) Ready retry that still matches focus
+    const ready = retryQueue.findIndex(it => it.when <= servedCount && !S.completed[it.idx] && isQuestionEligible(QUESTIONS[it.idx]));
+    if (ready !== -1) return retryQueue.splice(ready,1)[0].idx;
+    // 2) First unseen that matches focus (avoid immediate repeat)
+    for (let i=0;i<QUESTIONS.length;i++){
+      if (!S.completed[i] && i!==idx && isQuestionEligible(QUESTIONS[i])) return i;
+    }
+    // 3) Anything pending in retryQueue (even if not ready yet) that matches focus
+    const pending = retryQueue.find(it => isQuestionEligible(QUESTIONS[it.idx]) && !S.completed[it.idx]);
+    if (pending) return pending.idx;
+    // 4) Nothing left
+    return -1;
   }
 
   function next(manual=false){
     if (awaitingManualAdvance && !manual) return; // ignore any stray calls
+
     $('#btn-next').disabled = true;
     answeredThisQuestion = false;
     awaitingManualAdvance = false;
@@ -317,8 +445,9 @@
     if (i === -1) { scr('#screen-cooldown'); return; }
 
     idx = i; servedCount++;
+
     const q = QUESTIONS[idx];
-    $('#qtext').textContent = q.q + `  —  (${areaName(q.area)})`;
+    $('#qtext').textContent = q.q;
     const box = $('#answers'); box.innerHTML = '';
     q.a.forEach((t,i)=>{
       const d = document.createElement('div');
@@ -332,13 +461,13 @@
   }
 
   function choose(choiceIndex, el){
-    if (answeredThisQuestion) return;
+    if (answeredThisQuestion) return; // one tap only
     answeredThisQuestion = true;
 
     const q = QUESTIONS[idx];
     $$('.answer').forEach(a=>a.onclick=null);
     const correct = (choiceIndex === q.c);
-    const reason = q.e?.[choiceIndex] || (correct ? "Good call." : "Not ideal—try a different approach next time.");
+    const reason = q.e?.[choiceIndex] || (correct ? "Good call." : "Not ideal—let's try a different approach next time.");
 
     if (correct){
       el.classList.add('correct');
@@ -354,114 +483,26 @@
       const better = q.a[q.c];
       $('#feedback').innerHTML = `❌ ${reason} <br><span class="meta">Try next time: “${better}”.</span>`;
     }
-    saveProgress(); renderBars();
+
+    Game.write(S); renderBars();
+
+    // Require manual Next; enable the button and set guard
     awaitingManualAdvance = true;
     $('#btn-next').disabled = false;
   }
 
-  /* =========================
-     PARENT: PIN & DASHBOARD
-     ========================= */
-  const modalRoot = $('#modalRoot'), modalTitle = $('#modalTitle'), modalBody = $('#modalBody'), modalBtns = $('#modalBtns');
+  function award(){ S.xp = (S.xp||0) + 10; S.level = 1 + Math.floor((S.xp||0)/100); }
+  function renderBars(){ $('#streak').textContent=S.streak||0; $('#xptext').textContent=`XP ${S.xp||0}`; $('#level').textContent=S.level||1; $('#xpfill').style.width=((S.xp%100))+'%'; }
 
-  function openModal(title, bodyHTML, buttons){
-    modalTitle.textContent = title;
-    modalBody.innerHTML = bodyHTML;
-    modalBtns.innerHTML = '';
-    buttons.forEach(b=>{
-      const btn = document.createElement('button');
-      btn.className = 'btn' + (b.ghost ? ' ghost' : '');
-      btn.textContent = b.text;
-      btn.onclick = b.onClick;
-      modalBtns.appendChild(btn);
-    });
-    modalRoot.classList.remove('hide');
+  function confetti(){
+    const c=document.getElementById('confetti');
+    for(let i=0;i<22;i++){
+      const s=document.createElement('span'); s.className='piece';
+      s.textContent=['✨','💫','🌟','🎉','⭐'][Math.floor(Math.random()*5)];
+      s.style.left=(Math.random()*100)+'%'; s.style.animationDelay=(Math.random()*0.25)+'s';
+      c.appendChild(s); setTimeout(()=>s.remove(),1400);
+    }
   }
-  function closeModal(){ modalRoot.classList.add('hide'); }
-
-  function showCreatePin(){
-    openModal('Create Parent PIN', `
-      <div class="formrow"><label>PIN</label><input type="password" maxlength="4" class="pin" id="pin1" inputmode="numeric" placeholder="4 digits"></div>
-      <div class="formrow"><label>Confirm</label><input type="password" maxlength="4" class="pin" id="pin2" inputmode="numeric" placeholder="4 digits"></div>
-      <p class="small">This PIN is stored only on this device.</p>
-    `, [
-      {text:'Cancel', ghost:true, onClick:()=>closeModal()},
-      {text:'OK', onClick:()=>{
-        const a = $('#pin1').value.trim(), b=$('#pin2').value.trim();
-        if (!/^\d{4}$/.test(a)) return alert('Please enter a 4-digit PIN.');
-        if (a!==b) return alert('PINs do not match.');
-        P.pinHash = hashPin(a); saveParent(); closeModal(); showParentDash();
-      }}
-    ]);
-  }
-
-  function showEnterPin(){
-    openModal('Parent PIN', `
-      <div class="formrow"><label>Enter PIN</label><input type="password" maxlength="4" class="pin" id="pinIn" inputmode="numeric" placeholder="4 digits"></div>
-      <p class="small">Forgot it? Clear site data for github.io to reset.</p>
-    `, [
-      {text:'Cancel', ghost:true, onClick:()=>closeModal()},
-      {text:'Unlock', onClick:()=>{
-        const a = $('#pinIn').value.trim();
-        if (!/^\d{4}$/.test(a)) return alert('Please enter your 4-digit PIN.');
-        if (hashPin(a) !== P.pinHash) return alert('Incorrect PIN.');
-        closeModal(); showParentDash();
-      }}
-    ]);
-  }
-
-  function showParentDash(){
-    const checkboxes = AREAS.map(a=>{
-      const checked = (P.allowedAreas||[]).includes(a.id) ? 'checked' : '';
-      return `<label class="check"><input type="checkbox" data-area="${a.id}" ${checked}/> <span>${a.icon} ${a.name}</span></label>`;
-    }).join('');
-
-    openModal('Parent Dashboard', `
-      <div class="formrow">
-        <label>Preferred name</label>
-        <input id="prefName" class="input" placeholder="What should the app call your child?" value="${(P.preferredName||'').replace(/"/g,'&quot;')}">
-      </div>
-
-      <div class="formrow" style="align-items:start">
-        <label>Focus areas</label>
-        <div class="checkgrid">${checkboxes}</div>
-      </div>
-
-      <div class="formrow">
-        <label>Quick actions</label>
-        <div class="row">
-          <button class="btn ghost" id="qaReset">Reset Progress</button>
-          <button class="btn ghost" id="qaAll">Select All</button>
-          <button class="btn ghost" id="qaNone">Clear All</button>
-        </div>
-      </div>
-      <p class="small">Changes apply immediately and only affect this device.</p>
-    `, [
-      {text:'Close', ghost:true, onClick:()=>{ applyParentEdits(); closeModal(); }},
-      {text:'Save', onClick:()=>{ applyParentEdits(true); closeModal(); }}
-    ]);
-
-    $('#qaReset').onclick = ()=>{ S = { init:true, xp:0, level:1, streak:0, completed:{} }; saveProgress(); alert('Progress reset.'); };
-    $('#qaAll').onclick   = ()=>{$$('input[data-area]').forEach(cb=>cb.checked=true);};
-    $('#qaNone').onclick  = ()=>{$$('input[data-area]').forEach(cb=>cb.checked=false);};
-  }
-
-  function applyParentEdits(showAlert){
-    P.preferredName = $('#prefName').value.trim();
-    P.allowedAreas = $$('input[data-area]').filter(cb=>cb.checked).map(cb=>cb.getAttribute('data-area'));
-    saveParent();
-    updateKidGreeting();
-    if (showAlert) alert('Saved.');
-  }
-
-  $('#btn-parent').onclick = ()=>{
-    if (BYPASS_PARENT) return showParentDash();
-    if (!P.pinHash) return showCreatePin();
-    showEnterPin();
-  };
-
-  // Dismiss modal by clicking backdrop (optional)
-  modalRoot.addEventListener('click', (e)=>{ if (e.target===modalRoot) closeModal(); });
 </script>
 </body>
 </html>
