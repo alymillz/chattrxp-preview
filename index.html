@@ -3,71 +3,52 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Chattr XP • Neon Preview (v13)</title>
+<title>Chattr XP • Neon (v17)</title>
 <style>
   :root { --bg:#111216; --surface:#1E1F24; --text:#F8FAFC; --primary:#0EA5E9; --secondary:#EC4899; --success:#10B981; --danger:#ef4444; --muted:#94a3b8; }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
   .wrap{min-height:100dvh;display:flex;align-items:center;justify-content:center}
-  .card{width:min(760px,92vw);background:var(--surface);border-radius:20px;padding:20px 18px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  .card{width:min(820px,94vw);background:var(--surface);border-radius:20px;padding:22px 20px;box-shadow:0 10px 30px rgba(0,0,0,.35);position:relative}
   h1,h2,h3{margin:8px 0}.center{text-align:center}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-  .topbar{display:flex;align-items:center;justify-content:space-between}
-  .brand{display:flex;align-items:center;gap:8px}
-  .badge{font-size:12px;color:#9aa3b2}
-  .gear{
-    width:36px;height:36px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;
-    background:transparent;border:1px solid var(--muted);color:#cbd5e1;cursor:pointer
-  }
-  .gear:hover{transform:translateY(-1px)}
+  .topbar{position:absolute;right:16px;top:14px;display:flex;gap:8px}
+  .iconbtn{background:transparent;border:1px solid var(--muted);color:var(--text);border-radius:12px;padding:8px 10px;cursor:pointer}
   .btn{background:var(--primary);color:#fff;border:0;padding:12px 16px;border-radius:12px;cursor:pointer;font-weight:600;transition:transform .16s}
-  .btn:disabled{opacity:.5;cursor:not-allowed}
-  .btn:hover{transform:translateY(-1px)} .ghost{background:transparent;border:1px solid var(--muted);color:var(--text)}
+  .btn:disabled{opacity:.5;cursor:not-allowed} .btn:hover{transform:translateY(-1px)} .ghost{background:transparent;border:1px solid var(--muted);color:var(--text)}
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
   .answer{padding:14px;background:#20232a;border-radius:14px;cursor:pointer;user-select:none;transition:transform .12s,background .12s}
   .answer:hover{transform:scale(1.02);background:#262a33}.correct{background:var(--success)!important}.wrong{background:var(--danger)!important}
   .bar{height:12px;width:100%;background:#2a2e36;border-radius:8px;overflow:hidden;margin:8px 0 4px}
   .bar>div{height:100%;width:0%;background:linear-gradient(90deg,var(--secondary),var(--primary));transition:width .28s}
-  .meta{color:var(--muted);font-size:14px}.emoji{font-size:38px}
-  .avatars span{font-size:32px;padding:6px 10px;border-radius:10px;cursor:pointer}.avatars span.sel{outline:2px solid var(--secondary)}
-  .hide{display:none!important}.spacer{height:8px}.bigspacer{height:14px}
-  /* modal */
-  .modal-outer{position:fixed;inset:0;display:none;place-items:center;background:rgba(0,0,0,.5);z-index:50}
-  .modal{width:min(780px,94vw);background:#191b22;border:1px solid #2c3140;border-radius:18px;padding:16px}
-  .modal h3{margin-top:0}
-  .form-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-  .chip{display:inline-flex;align-items:center;gap:6px;padding:8px 10px;border-radius:12px;border:1px solid #374151;cursor:pointer}
-  .chip input{transform:scale(1.1)}
-  .pin-input{letter-spacing:.35em;padding:10px 12px;border-radius:10px;border:1px solid #334155;background:#0f1116;color:#fff;width:120px;text-align:center}
-  .confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden}.piece{position:absolute;font-size:22px;animation:fall 1.2s linear forwards}
+  .meta{color:var(--muted);font-size:14px}.emoji{font-size:38px}.avatars span{font-size:32px;padding:6px 10px;border-radius:10px;cursor:pointer}
+  .avatars span.sel{outline:2px solid var(--secondary)} .hide{display:none!important} .spacer{height:8px}
+  .badge{font-size:12px;color:#aaa}.confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden}.piece{position:absolute;font-size:22px;animation:fall 1.2s linear forwards}
   @keyframes fall{to{transform:translateY(100vh) rotate(360deg);opacity:0}}
+  .modalBackdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:16px}
+  .modal{background:#1c1d22;border:1px solid #2b2e36;border-radius:16px;padding:18px;max-width:680px;width:100%}
+  .modal h3{margin-top:0}
+  .field{display:flex;flex-direction:column;gap:6px;margin:8px 0}
+  .chip{display:inline-flex;align-items:center;gap:8px;border:1px solid #39404c;border-radius:999px;padding:8px 12px;cursor:pointer}
+  .chip.sel{border-color:var(--primary);box-shadow:0 0 0 2px rgba(14,165,233,.25) inset}
+  .chip input{accent-color:var(--primary)}
+  .row.space{justify-content:space-between}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="card" id="screen-start">
     <div class="topbar">
-      <div class="brand">
-        <div class="emoji">✨</div>
-        <div>
-          <h1 style="margin:0">Chattr XP</h1>
-          <div class="badge">Preview v13</div>
-        </div>
-      </div>
-      <button class="gear" id="btn-gear" title="Parent">
-        <!-- simple gear icon -->
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Zm8.94 3.5a7.53 7.53 0 0 0-.13-1.36l2.17-1.69-2-3.46-2.62 1.08a7.66 7.66 0 0 0-2.35-1.36L13.5 1h-4l-.51 3.21a7.66 7.66 0 0 0-2.35 1.36L4 3.49l-2 3.46 2.17 1.69c-.06.45-.1.9-.1 1.36s.04.91.1 1.36L2 13.41l2 3.46 2.64-1.09c.7.57 1.5 1.03 2.35 1.35l.51 3.22h4l.51-3.22c.85-.32 1.65-.78 2.35-1.35L21 16.87l2-3.46-2.17-1.4c.09-.45.11-.91.11-1.41Z" stroke="#cbd5e1" stroke-width="1.2" fill="none"/>
-        </svg>
-      </button>
+      <button class="iconbtn" id="btn-gear" title="Parent settings">⚙️</button>
     </div>
-
     <div class="center">
-      <p class="meta">Level up. Win more. Keep the streak.</p>
-      <h3>Choose your avatar</h3>
+      <div class="emoji">✨</div>
+      <h1>Chattr XP</h1>
+      <p class="meta">Practice real-world social moves. Earn XP. Unlock codes.</p>
+      <p class="badge">v17</p>
+      <h3>Pick an avatar</h3>
       <div class="row avatars" id="avatars">
         <span>😎✨</span><span>🎧⚡</span><span>🏀💥</span><span>🎮⭐</span><span>📚💡</span><span>🧠🔓</span>
       </div>
-      <div class="bigspacer"></div>
+      <div class="spacer"></div>
       <button class="btn" id="btn-start">Play</button>
     </div>
   </div>
@@ -75,15 +56,16 @@
   <div class="card hide" id="screen-quiz">
     <div class="row" style="justify-content:space-between">
       <div><span id="avatar" class="emoji">😎✨</span></div>
-      <div class="meta"><span id="kidName"></span> 🔥 Streak: <b id="streak">0</b></div>
+      <div class="meta">🔥 Streak: <b id="streak">0</b></div>
     </div>
     <div class="bar"><div id="xpfill"></div></div>
     <div class="meta"><span id="xptext">XP 0</span> · Level <span id="level">1</span></div>
+    <div class="meta" id="activeAreas" style="margin:6px 0"></div>
 
     <h3 id="qtext" style="margin-top:10px"></h3>
     <div class="grid" id="answers"></div>
     <div class="meta" id="feedback" style="margin-top:6px"></div>
-    <div class="row" style="justify-content:space-between;margin-top:12px">
+    <div class="row space" style="margin-top:12px">
       <button class="btn ghost" id="btn-exit">Exit</button>
       <button class="btn" id="btn-next" disabled>Next</button>
     </div>
@@ -91,8 +73,8 @@
 
   <div class="card hide" id="screen-cooldown">
     <div class="center">
-      <h2>Nice run 🔥</h2>
-      <p class="meta">Come back later for more XP.</p>
+      <h2>Nice work 🔥</h2>
+      <p class="meta">Keep the reps going tomorrow.</p>
       <div class="spacer"></div>
       <button class="btn" id="btn-reward">View Reward</button>
       <button class="btn ghost" id="btn-profile">Profile</button>
@@ -103,7 +85,7 @@
     <div class="center">
       <h2>Rewards</h2>
       <div style="font-size:64px">✉️</div>
-      <p class="meta">Tap to reveal a sample code</p>
+      <p class="meta">Tap to reveal a sample code.</p>
       <button class="btn" id="btn-open">Open ✉️</button>
       <div id="codebox" class="hide" style="margin-top:10px">
         <div style="font-size:36px">🧩</div>
@@ -127,375 +109,247 @@
   </div>
 </div>
 
-<!-- Parent modal (PIN lock + Dashboard) -->
-<div class="modal-outer" id="parentModal">
-  <div class="modal">
-    <div class="topbar" style="margin-bottom:8px">
-      <h3 style="margin:0">Parent</h3>
-      <button class="gear" id="btn-close-parent">✕</button>
-    </div>
-    <div id="parentStepPIN">
-      <p class="meta" id="pinStatus">Enter PIN</p>
-      <input id="pinInput" class="pin-input" maxlength="8" placeholder="4–8 digits" inputmode="numeric" />
-      <div class="spacer"></div>
-      <div class="row">
-        <button class="btn" id="pinSubmit">Unlock</button>
-        <button class="btn ghost" id="pinSet">Set / Change PIN</button>
-      </div>
-      <p class="meta">Tip: First time? Click “Set / Change PIN”.</p>
-    </div>
-
-    <div id="parentStepDash" class="hide">
-      <h3 style="margin-top:4px">Dashboard</h3>
-      <div class="spacer"></div>
-      <label class="meta">Preferred name</label>
-      <div class="form-row">
-        <input id="prefName" class="pin-input" style="letter-spacing:0;width:240px" placeholder="e.g., Zeva" />
-      </div>
-
-      <div class="bigspacer"></div>
-      <label class="meta">Focus areas (hidden from kid view)</label>
-      <div class="form-row" id="areasBox">
-        <!-- chips inserted by JS -->
-      </div>
-
-      <div class="bigspacer"></div>
-      <div class="row">
-        <button class="btn" id="saveParent">Save</button>
-        <button class="btn ghost" id="lockParent">Lock</button>
-      </div>
-      <p class="meta">Saving affects the question pool immediately.</p>
-    </div>
-  </div>
+<!-- Parent PIN / Dashboard Modal -->
+<div class="modalBackdrop hide" id="parentModal">
+  <div class="modal" id="modalContent"></div>
 </div>
 
 <div id="confetti" class="confetti"></div>
 
 <script>
-  /***************
-   * SETTINGS
-   ***************/
-  // During development we always start fresh (XP/streak/progress wiped each Play),
-  // but parent settings + PIN persist in a separate store.
-  const DEV_ALWAYS_RESET = true;
+  // ---------- Config / Dev ----------
+  const DEV_MODE = location.search.includes('dev=1'); // resets session on Start
+  const RETRY_GAP = 2;
 
-  // Focus areas are invisible to kids; parents pick them. They map to tags on questions.
-  const FOCUS_AREAS = [
-    {id:"confidence", label:"Confidence"},
-    {id:"communication", label:"Communication"},
-    {id:"empathy", label:"Empathy"},
-    {id:"boundaries", label:"Boundaries"},
-    {id:"organization", label:"Organization"},
-    {id:"teamplay", label:"Team Play"},
+  const AREAS = [
+    {key:"patience", label:"Patience & Waiting"},
+    {key:"sarcasm", label:"Sarcasm Sense"},
+    {key:"vibes", label:"Conversation Vibes"},
+    {key:"calm", label:"Calm Control"}
   ];
 
-  /***************
-   * QUESTION BANK
-   * (each question may include tags; if no tags, it’s always eligible)
-   ***************/
-  const QUESTIONS = [
-    {
-      q: "A friend texts during homework time. What’s your move?",
-      a: ["Finish this section, then reply","Reply now, it’s quick","Ignore for hours","Send a meme instead"],
-      e: [
-        "You keep focus and still respond soon. Your brain switches tasks less, so you finish faster and sound calmer.",
-        "Looks harmless, but it breaks focus. One quick reply becomes a thread and homework takes longer.",
-        "They may feel ignored or worry you’re upset. Silence creates drama you don’t need.",
-        "Off-topic and delays both tasks. Sends mixed signals and can seem dismissive."
-      ],
-      c: 0,
-      tags:["organization","communication"]
-    },
-    {
-      q: "You join a new group chat. Best first message?",
-      a: ["Hey, I’m new here! Nice to meet you all.","Spam emojis","Drop a hot take","Ask everyone’s full names"],
-      e: [
-        "Friendly + low-pressure. You signal respect and invite normal conversation.",
-        "Looks chaotic and attention-seeking; people may mute you immediately.",
-        "High-conflict starts make a bad first impression and can split the group.",
-        "Feels like an interrogation. Learn names naturally as people talk."
-      ],
-      c: 0,
-      tags:["communication","confidence","teamplay"]
-    },
-    {
-      q: "A classmate misreads your joke and gets upset. Best fix?",
-      a: ["Explain and apologize","Double down","Blame autocorrect","Leave the chat"],
-      e: [
-        "You repair trust quickly. Owning it shows maturity and keeps the friendship.",
-        "Escalates hurt feelings and makes you look mean on purpose.",
-        "Dodges responsibility; they’ll feel you aren’t sincere.",
-        "Looks like you don’t care and leaves the problem unsolved."
-      ],
-      c: 0,
-      tags:["empathy","communication","boundaries"]
-    },
-    {
-      q: "Someone cuts you off while speaking. What’s best?",
-      a: ["Wait, then calmly finish","Interrupt back","Stay silent","Walk out"],
-      e: [
-        "You set a respectful boundary and model good turn-taking.",
-        "Turns it into a battle; everyone stops listening and tension rises.",
-        "Your point gets lost and you teach people it’s okay to talk over you.",
-        "Escalates the situation and can look disrespectful."
-      ],
-      c: 0,
-      tags:["boundaries","confidence","communication"]
-    },
-    {
-      q: "You forgot a friend’s birthday. What now?",
-      a: ["Apologize and make it up","Pretend you remembered","Blame your calendar","Ignore it"],
-      e: [
-        "Honest + effort = trust repair. Small plan > long excuse.",
-        "They’ll likely find out; trust drops more than if you were honest.",
-        "Excuses feel weak and they may think you don’t value them.",
-        "Signals they don’t matter to you, which can end friendships."
-      ],
-      c: 0,
-      tags:["empathy","communication"]
-    }
+  const POS_OK = ["Nice.", "Solid call.", "Good read.", "That works.", "Strong move."];
+  const NEG_OK = ["Heads up.", "Quick note.", "Careful.", "Small thing.", "Real talk."];
+
+  // ---------- Question bank (5 per area) ----------
+  const BANK = [
+    // Patience & Waiting (incl. mom-chat scenario)
+    {area:"patience", q:"Mom runs into a neighbor and starts catching up. You are getting bored. What keeps it smooth?",
+      a:["Check one nearby aisle and come right back.","Sigh so Mom gets the hint.","Cut in with “We have to go now.”","Wander off to the parking lot."],
+      e:["You stay useful and safe. A small loop and check-in shows you can handle the wait.","That grabs attention but raises tension. A calm check-in works better.","That forces the moment and spikes stress. A softer ask lands better.","That can worry your adult. Staying close and checking in is safer."],
+      c:0},
+    {area:"patience", q:"The line is moving slowly. What helps you wait without boiling over?",
+      a:["Count ten slow breaths and watch the floor tiles.","Complain loudly about the speed.","Push ahead to the front.","Stare at someone until they move."],
+      e:["That drains some steam and keeps your body steady.","That amps up the vibe and makes the wait feel longer.","That creates conflict and can get you sent back.","That makes others uncomfortable and can start a scene."],
+      c:0},
+    {area:"patience", q:"Your turn is in five minutes. What’s a solid way to spend it?",
+      a:["Pick a tiny task: check your list or organize your bag.","Scroll randomly while fuming.","Tell everyone you are bored every 30 seconds.","Leave without saying anything."],
+      e:["A small job gives your brain a lane and the time moves faster.","That keeps your brain on the frustration and time crawls.","That spreads the stress to everyone else.","People worry when you disappear, and you might miss your spot."],
+      c:0},
+    {area:"patience", q:"Dinner is taking longer than expected. What keeps things chill?",
+      a:["Ask how long it might be and plan a quick table game.","Groan about being starving.","Announce you are not eating anymore.","Walk to the kitchen to hurry them."],
+      e:["You get info and a bridge activity. That lowers the heat.","That turns up the tension at the table.","That punishes you and stresses everyone else.","Staff can’t speed up safely; that move backfires."],
+      c:0},
+    {area:"patience", q:"Coach is helping another player. What’s your move while you wait?",
+      a:["Practice a simple drill on the side and keep an eye out.","Interrupt to ask your question now.","Sit and stare at the clock.","Leave practice early."],
+      e:["You improve and show respect for the flow. You’ll get help soon.","That jumps the line and slows things for everyone.","That makes the wait feel longer and builds frustration.","You miss reps and look checked-out."],
+      c:0},
+    // Sarcasm Sense
+    {area:"sarcasm", q:"A classmate says “Nice job” after you clearly missed the shot and smirks. What likely happened?",
+      a:["They are being sarcastic.","They really mean it.","They forgot what ‘nice’ means.","They are talking to someone else."],
+      e:["Tone + smirk usually means sarcasm. You can laugh it off or ignore it.","The mismatch between words and tone suggests otherwise.","Unlikely—this is about tone, not vocabulary.","They were looking at you; context points to you."],
+      c:0},
+    {area:"sarcasm", q:"Someone texts “Great timing 🙃” after you arrive late. Best read?",
+      a:["They mean the opposite and feel annoyed.","They are praising you.","They are confused about time.","They do not care either way."],
+      e:["The upside-down emoji plus words signal sarcasm and mild frustration.","Words and emoji don’t match praise here.","There’s no sign of confusion—just tone.","The message shows they do care."],
+      c:0},
+    {area:"sarcasm", q:"A friend says “Wow, so subtle” after you whispered too loudly. What helps most?",
+      a:["Say “Yeah, my bad” and lower your voice next time.","Argue that you were actually subtle.","Pretend you did not hear it.","Tell them to stop being dramatic."],
+      e:["You show you got the hint and adjust. Tension drops fast.","That keeps the moment stuck and can grow into an argument.","They may repeat it louder. It drags the moment out.","That adds heat and can turn it into a fight."],
+      c:0},
+    {area:"sarcasm", q:"Group chat: “Awesome plan 🙄” after a messy idea. What’s a clean move?",
+      a:["Reply: “Fair point—what would make it better?”","Clap back with your own sarcasm.","Leave the chat for a while.","Spam memes until it blows over."],
+      e:["You turn sarcasm into useful feedback and keep the vibe steady.","That escalates and splits the group.","That dodges the fix and confuses people.","That buries the issue and annoys everyone."],
+      c:0},
+    {area:"sarcasm", q:"You are not sure if a message is sarcastic. What is a good check?",
+      a:["Ask: “Serious or joking?” in a light tone.","Assume the worst and fire back.","Ignore everything for days.","Tell them they’re rude in all caps."],
+      e:["Quick clarity beats guessing. Tone stays low, info goes up.","That can turn a non-issue into a fight.","Silence grows weirdness and stress.","All-caps feels like yelling; it spikes the heat."],
+      c:0},
+    // Conversation Vibes
+    {area:"vibes", q:"New group. What’s an easy opener that lands well?",
+      a:["“Hey, I’m new—good to be here.”","A flood of random emojis.","A spicy opinion to “get it started.”","Asking everyone’s full names."],
+      e:["Friendly and low-pressure. It invites normal talk.","That looks like noise and gets muted.","That splits the room before you know the vibe.","Feels like an interview; names come naturally."],
+      c:0},
+    {area:"vibes", q:"You can’t tell if someone is done talking. What helps?",
+      a:["Wait a beat and say, “I had a thought—can I add?”","Jump in louder so you do not miss your turn.","Stay silent the whole time.","Wave your hand in their face."],
+      e:["You signal you’re ready without stepping on them.","That becomes a volume contest and people tune out.","Your point gets lost and timing gets harder.","That reads as rude and distracts the room."],
+      c:0},
+    {area:"vibes", q:"Friend looks tired and quiet today. How do you start?",
+      a:["“Want a chill hang or should I give you space?”","Tell a long story right away.","Ask five fast questions in a row.","Ignore the change and keep pushing."],
+      e:["You match the energy and give them choice. That earns trust.","That takes energy they may not have.","Rapid-fire feels like pressure.","You miss the cue and the vibe gets off."],
+      c:0},
+    {area:"vibes", q:"You made a joke; no one laughs. What keeps things smooth?",
+      a:["Smile and keep moving to the next topic.","Repeat the joke louder.","Say it was hilarious and they missed it.","Call the group boring."],
+      e:["You read the room and let it go. No harm, no foul.","Louder won’t fix it; it just adds pressure.","That sounds defensive and awkward.","Now the vibe gets tense and prickly."],
+      c:0},
+    {area:"vibes", q:"Someone shares good news. Solid response?",
+      a:["“That’s awesome—nice work!” and a quick follow-up question.","Tell a bigger story about yourself.","Say “cool.” and change the subject.","Correct a small detail they said wrong."],
+      e:["You celebrate them and keep momentum going.","You take the spotlight away from their moment.","That cuts the energy short.","Fixing tiny details kills the vibe."],
+      c:0},
+    // Calm Control
+    {area:"calm", q:"The hallway is loud and bright. Your body feels overloaded. What helps right now?",
+      a:["Step to a quieter spot and take five slow breaths.","Push through and ignore your body.","Yell at people to be quiet.","Run out of the building."],
+      e:["You lower the input and steady your system.","Ignoring signals usually makes them louder.","That adds more noise and heat.","That’s unsafe and creates new problems."],
+      c:0},
+    {area:"calm", q:"You feel a big emotion rising during a talk. Best quick move?",
+      a:["Ask for a short pause and sip water.","Keep talking faster to ‘win.’","Say nothing and shake your leg hard.","Storm out mid-sentence."],
+      e:["A tiny pause resets your brain and tone.","Speed raises mistakes and tension.","That burns energy but not the problem.","Exits like that spike drama."],
+      c:0},
+    {area:"calm", q:"Someone teases you twice. What keeps your power?",
+      a:["Name the line calmly: “Not cool—drop it.”","Fire back with a bigger insult.","Laugh even though you’re upset.","Pretend you didn’t hear anything for days."],
+      e:["Clear + calm sets a boundary without feeding the fire.","Insults grow the problem fast.","Your face and voice will show the mismatch.","Silence lets it repeat."],
+      c:0},
+    {area:"calm", q:"Your hands are fidgety during class. What’s a smart play?",
+      a:["Use a small fidget under the desk and keep eyes forward.","Tap loudly on the desk to stay alert.","Stand up and pace without asking.","Hold your breath to stop moving."],
+      e:["You meet the need quietly and keep attention on the work.","That distracts everyone and the teacher calls it out.","That breaks the flow and pulls attention.","That adds stress and backfires."],
+      c:0},
+    {area:"calm", q:"A game is not going your way and you want to rage-quit. Better move?",
+      a:["Pause, breathe, and set one small goal for the next round.","Throw the controller to “reset.”","Yell about lag and cheats.","Quit and stomp away."],
+      e:["You shift to something you can control and settle the tilt.","That can break stuff and trust.","Blaming everything keeps you stuck.","You lose the chance to adjust and learn."],
+      c:0}
   ];
 
-  /***************
-   * STORAGE
-   ***************/
-  // Game session state (gets reset often during dev)
-  const GAME_KEY = 'cxp_game';
-  // Parent-only settings (persist)
-  const PARENT_KEY = 'cxp_parent';
-
-  const Game = {
-    read(){ return JSON.parse(localStorage.getItem(GAME_KEY)||'{}'); },
-    write(o){ localStorage.setItem(GAME_KEY, JSON.stringify(o)); },
-    fresh(avatar){ return { init:true, avatar: avatar || '😎✨', xp:0, level:1, streak:0, completed:{} }; }
-  };
-  const Parent = {
-    read(){ return JSON.parse(localStorage.getItem(PARENT_KEY)||'{}'); },
-    write(o){ localStorage.setItem(PARENT_KEY, JSON.stringify(o)); }
-  };
-
-  /***************
-   * DOM SHORTCUTS
-   ***************/
-  const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+  // ---------- Helpers ----------
+  const $ = s => document.querySelector(s);
+  const $$ = s => [...document.querySelectorAll(s)];
   const scr = id => { ['#screen-start','#screen-quiz','#screen-cooldown','#screen-reward','#screen-profile'].forEach(sel => $(sel).classList.add('hide')); $(id).classList.remove('hide'); };
+  const shuffle = arr => { for (let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; } return arr; };
 
-  /***************
-   * GLOBALS
-   ***************/
-  let S = Game.read();
-  let P = Parent.read();
-  if (!S.init) { S = Game.fresh(); Game.write(S); }
-  if (!P.init) {
-    P = { init:true, pin:null, areas:[], preferredName:'' };
-    Parent.write(P);
-  }
+  // ---------- Persistent state ----------
+  const LS = { get: () => JSON.parse(localStorage.getItem('cxp')||'{}'), set: v => localStorage.setItem('cxp', JSON.stringify(v)) };
+  let S = LS.get();
+  if (!S.init) S = { init:true, avatar:'😎✨', xp:0, level:1, streak:0, completed:{}, settings:{pinSet:false, pinHash:'', preferredName:'', areas:AREAS.map(a=>a.key)}, lastVersion:'v17' };
+  if (!S.settings) S.settings = {pinSet:false, pinHash:'', preferredName:'', areas:AREAS.map(a=>a.key)};
+  S.lastVersion = 'v17'; LS.set(S);
 
-  // DEV: always start fresh (but keep avatar)
-  if (DEV_ALWAYS_RESET) {
-    S = Game.fresh(S.avatar);
-    Game.write(S);
-  }
-
-  // Retry logic
-  const RETRY_GAP = 2;        // how many questions later to retry a miss
-  let retryQueue = [];        // { idx, when }
+  // ---------- Runtime ----------
+  let retryQueue = [];   // { idx, when }
   let servedCount = 0;
   let idx = -1;
-  let answeredThisQuestion = false;
-  let awaitingManualAdvance = false;  // lock so only the Next button can advance
+  let answered = false;
+  let awaitingManual = false;
+  let workingSet = [];   // indices filtered by areas
+  let currentChoices = []; // shuffled choices for this question
 
-  // Avatar picker
+  // ---------- Avatars ----------
   $$('#avatars span').forEach(sp=>{
     if (sp.textContent === S.avatar) sp.classList.add('sel');
-    sp.onclick = () => { $$('#avatars span').forEach(x=>x.classList.remove('sel')); sp.classList.add('sel'); S.avatar = sp.textContent; Game.write(S); };
+    sp.onclick = () => { $$('#avatars span').forEach(x=>x.classList.remove('sel')); sp.classList.add('sel'); S.avatar = sp.textContent; LS.set(S); };
   });
 
-  // Buttons
+  // ---------- Buttons ----------
   $('#btn-start').onclick   = () => { $('#avatar').textContent=S.avatar; $('#pAvatar').textContent=S.avatar; startSession(); };
   $('#btn-exit').onclick    = () => scr('#screen-start');
-  $('#btn-next').onclick    = () => next(true);                  // true = manual advance
+  $('#btn-next').onclick    = () => next(true);
   $('#btn-reward').onclick  = () => scr('#screen-reward');
   $('#btn-profile').onclick = () => scr('#screen-profile');
   $('#btn-open').onclick    = () => $('#codebox').classList.remove('hide');
   $('#btn-back-to-quiz').onclick = () => scr('#screen-quiz');
   $('#btn-play-again').onclick   = () => startSession();
   $('#btn-reset').onclick = () => { resetProgress(true); alert('Progress reset. You can replay from the start.'); };
+  $('#btn-gear').onclick = () => openParentModal();
 
-  // Gear / Parent modal
-  const modal = $('#parentModal');
-  $('#btn-gear').onclick = () => { openParent(); };
-  $('#btn-close-parent').onclick = () => { modal.style.display='none'; };
-
-  // PIN step
-  $('#pinSubmit').onclick = doPinSubmit;
-  $('#pinSet').onclick = doPinSet;
-
-  // Dashboard step
-  $('#saveParent').onclick = saveParent;
-  $('#lockParent').onclick = () => { $('#parentStepDash').classList.add('hide'); $('#parentStepPIN').classList.remove('hide'); $('#pinStatus').textContent = 'Locked'; };
-
-  // Build area chips
-  const areasBox = $('#areasBox');
-  FOCUS_AREAS.forEach(a=>{
-    const label = document.createElement('label');
-    label.className='chip';
-    label.innerHTML = `<input type="checkbox" value="${a.id}"> ${a.label}`;
-    areasBox.appendChild(label);
-  });
-
-  function openParent(){
-    modal.style.display='grid';
-    // reset views
-    $('#parentStepPIN').classList.remove('hide');
-    $('#parentStepDash').classList.add('hide');
-    $('#pinStatus').textContent = P.pin ? 'Enter PIN' : 'No PIN set';
-    $('#pinInput').value='';
-  }
-
-  function doPinSubmit(){
-    const val = ($('#pinInput').value||'').trim();
-    if (!P.pin) { $('#pinStatus').textContent = 'No PIN set. Click “Set / Change PIN”.'; return; }
-    if (val === P.pin) {
-      gotoDash();
-    } else {
-      $('#pinStatus').textContent = 'Incorrect PIN';
-    }
-  }
-
-  function doPinSet(){
-    const val = ($('#pinInput').value||'').trim();
-    if (!/^\d{4,8}$/.test(val)) { $('#pinStatus').textContent='PIN must be 4–8 digits'; return; }
-    P.pin = val;
-    Parent.write(P);
-    $('#pinStatus').textContent='PIN saved';
-    gotoDash();
-  }
-
-  function gotoDash(){
-    $('#parentStepPIN').classList.add('hide');
-    $('#parentStepDash').classList.remove('hide');
-    // fill fields
-    $('#prefName').value = P.preferredName || '';
-    // set chips
-    $$('#areasBox input[type=checkbox]').forEach(cb=>{
-      cb.checked = (P.areas||[]).includes(cb.value);
-    });
-  }
-
-  function saveParent(){
-    P.preferredName = ($('#prefName').value||'').trim();
-    P.areas = $$('#areasBox input[type=checkbox]:checked').map(cb=>cb.value);
-    Parent.write(P);
-    // small visual confirm
-    alert('Saved.');
-  }
-
-  // Start a session (resets progress while keeping avatar)
+  // ---------- Session control ----------
   function startSession(){
-    if (DEV_ALWAYS_RESET) {
-      S = Game.fresh(S.avatar);
-      Game.write(S);
-    }
+    if (DEV_MODE) { S.xp=0; S.level=1; S.streak=0; S.completed={}; LS.set(S); }
+    const activeAreas = (S.settings?.areas?.length? S.settings.areas : AREAS.map(a=>a.key));
+    workingSet = BANK.map((q,i)=>({i,q})).filter(x=>activeAreas.includes(x.q.area)).map(x=>x.i);
     scr('#screen-quiz');
-    renderBars();
+    renderBars(); renderActiveAreas();
     servedCount = 0; retryQueue = []; idx = -1;
-    // kid header preferred name
-    $('#kidName').textContent = P.preferredName ? `Player: ${P.preferredName}` : '';
     next(true);
   }
 
-  function resetProgress(keepAvatar){
-    S = Game.fresh(keepAvatar ? (S.avatar || '😎✨') : '😎✨');
-    Game.write(S);
-    renderBars();
+  function renderActiveAreas(){
+    const labels = AREAS.filter(a=> (S.settings?.areas||[]).includes(a.key)).map(a=>a.label);
+    $('#activeAreas').textContent = labels.length ? `Focus: ${labels.join(' · ')}` : 'Focus: All areas';
   }
 
-  // Filtering by parent-picked areas
-  function isQuestionEligible(q){
-    const chosen = P.areas || [];
-    if (!chosen.length) return true; // if parent picked none, show all
-    const tags = q.tags || [];
-    return tags.some(t => chosen.includes(t));
+  function resetProgress(keepAvatar){
+    S = { init:true, avatar: keepAvatar ? (S.avatar || '😎✨') : '😎✨', xp:0, level:1, streak:0, completed:{}, settings: S.settings, lastVersion:'v17' };
+    LS.set(S); renderBars();
   }
 
   function pickNextIndex(){
-    // 1) Ready retry that still matches focus
-    const ready = retryQueue.findIndex(it => it.when <= servedCount && !S.completed[it.idx] && isQuestionEligible(QUESTIONS[it.idx]));
+    const ready = retryQueue.findIndex(it => it.when <= servedCount && !S.completed[it.idx]);
     if (ready !== -1) return retryQueue.splice(ready,1)[0].idx;
-    // 2) First unseen that matches focus (avoid immediate repeat)
-    for (let i=0;i<QUESTIONS.length;i++){
-      if (!S.completed[i] && i!==idx && isQuestionEligible(QUESTIONS[i])) return i;
-    }
-    // 3) Anything pending in retryQueue (even if not ready yet) that matches focus
-    const pending = retryQueue.find(it => isQuestionEligible(QUESTIONS[it.idx]) && !S.completed[it.idx]);
-    if (pending) return pending.idx;
-    // 4) Nothing left
+    const i = workingSet.find(ii => !S.completed[ii] && ii!==idx);
+    if (i !== undefined) return i;
+    if (retryQueue.length) return retryQueue[0].idx;
     return -1;
   }
 
   function next(manual=false){
-    if (awaitingManualAdvance && !manual) return; // ignore any stray calls
-
-    $('#btn-next').disabled = true;
-    answeredThisQuestion = false;
-    awaitingManualAdvance = false;
+    if (awaitingManual && !manual) return;
+    $('#btn-next').disabled = true; answered=false; awaitingManual=false;
 
     const i = pickNextIndex();
-    if (i === -1) { scr('#screen-cooldown'); return; }
+    if (i === -1){
+      if (DEV_MODE){ startSession(); return; }
+      scr('#screen-cooldown'); return;
+    }
 
     idx = i; servedCount++;
+    const q = BANK[idx];
 
-    const q = QUESTIONS[idx];
-    $('#qtext').textContent = q.q;
-    const box = $('#answers'); box.innerHTML = '';
-    q.a.forEach((t,i)=>{
+    // Build and shuffle choices while keeping correctness & explanations aligned
+    currentChoices = q.a.map((t,k)=>({ text:t, exp:q.e[k], correct:(k===q.c) }));
+    shuffle(currentChoices);
+
+    $('#qtext').textContent = (S.settings.preferredName ? q.q.replace(/\bZeva\b/g, S.settings.preferredName) : q.q);
+    const box = $('#answers'); box.innerHTML='';
+    currentChoices.forEach((choice)=>{
       const d = document.createElement('div');
       d.className = 'answer';
-      d.textContent = t;
-      d.onclick = () => choose(i, d);
+      d.textContent = choice.text;
+      d.onclick = () => choose(choice, d);
       box.appendChild(d);
     });
-    $('#feedback').textContent = '';
-    window.scrollTo({top:0, behavior:'smooth'});
+    $('#feedback').textContent='';
+    window.scrollTo({top:0,behavior:'smooth'});
   }
 
-  function choose(choiceIndex, el){
-    if (answeredThisQuestion) return; // one tap only
-    answeredThisQuestion = true;
-
-    const q = QUESTIONS[idx];
+  function choose(choice, el){
+    if (answered) return; answered=true;
     $$('.answer').forEach(a=>a.onclick=null);
-    const correct = (choiceIndex === q.c);
-    const reason = q.e?.[choiceIndex] || (correct ? "Good call." : "Not ideal—let's try a different approach next time.");
+
+    const q = BANK[idx];
+    const correct = !!choice.correct;
+    const leadGood = POS_OK[Math.floor(Math.random()*POS_OK.length)];
+    const leadWarn = NEG_OK[Math.floor(Math.random()*NEG_OK.length)];
+    const reason = choice.exp || (correct ? "Good call." : "Tough read there.");
 
     if (correct){
       el.classList.add('correct');
-      S.completed[idx] = true;
-      S.streak = (S.streak||0) + 1;
-      award();
-      $('#feedback').textContent = `✅ ${reason}`;
+      S.completed[idx]=true; S.streak=(S.streak||0)+1; award();
+      $('#feedback').textContent = `${leadGood} ${reason}`;
       confetti();
     } else {
       el.classList.add('wrong');
-      S.streak = 0;
+      S.streak=0;
       retryQueue.push({ idx, when: servedCount + RETRY_GAP });
       const better = q.a[q.c];
-      $('#feedback').innerHTML = `❌ ${reason} <br><span class="meta">Try next time: “${better}”.</span>`;
+      $('#feedback').innerHTML = `${leadWarn} ${reason} <br><span class="meta">A cleaner move is: “${better}”.</span>`;
     }
-
-    Game.write(S); renderBars();
-
-    // Require manual Next; enable the button and set guard
-    awaitingManualAdvance = true;
-    $('#btn-next').disabled = false;
+    LS.set(S); renderBars();
+    awaitingManual = true; $('#btn-next').disabled=false;
   }
 
-  function award(){ S.xp = (S.xp||0) + 10; S.level = 1 + Math.floor((S.xp||0)/100); }
+  function award(){ S.xp=(S.xp||0)+10; S.level=1+Math.floor((S.xp||0)/100); }
   function renderBars(){ $('#streak').textContent=S.streak||0; $('#xptext').textContent=`XP ${S.xp||0}`; $('#level').textContent=S.level||1; $('#xpfill').style.width=((S.xp%100))+'%'; }
 
   function confetti(){
-    const c=document.getElementById('confetti');
+    const c=$('#confetti');
     for(let i=0;i<22;i++){
       const s=document.createElement('span'); s.className='piece';
       s.textContent=['✨','💫','🌟','🎉','⭐'][Math.floor(Math.random()*5)];
@@ -503,6 +357,113 @@
       c.appendChild(s); setTimeout(()=>s.remove(),1400);
     }
   }
+
+  // ---------- Parent Modal ----------
+  function openParentModal(){
+    const hasPin = !!S.settings.pinSet;
+    $('#parentModal').classList.remove('hide');
+    $('#modalContent').innerHTML = hasPin ? pinEntryHTML() : pinSetupHTML();
+    bindPinHandlers();
+  }
+  function closeParentModal(){ $('#parentModal').classList.add('hide'); }
+  function hashPin(p){ return btoa(String(p).trim()); }
+
+  function pinSetupHTML(){
+    return `
+      <h3>Parent Setup</h3>
+      <p class="meta">Create a 4-digit PIN to protect settings.</p>
+      <div class="field"><label>Choose PIN</label><input id="pin1" inputmode="numeric" maxlength="4" class="inp" /></div>
+      <div class="field"><label>Confirm PIN</label><input id="pin2" inputmode="numeric" maxlength="4" class="inp" /></div>
+      <div class="row space" style="margin-top:10px">
+        <button class="btn ghost" id="pm-cancel">Close</button>
+        <button class="btn" id="pm-savepin">Save PIN</button>
+      </div>`;
+  }
+  function pinEntryHTML(){
+    return `
+      <h3>Parent Access</h3>
+      <p class="meta">Enter your 4-digit PIN to open the dashboard.</p>
+      <div class="field"><label>PIN</label><input id="pinEntry" inputmode="numeric" maxlength="4" class="inp" /></div>
+      <div class="row space" style="margin-top:10px">
+        <button class="btn ghost" id="pm-cancel">Close</button>
+        <button class="btn" id="pm-enter">Enter</button>
+      </div>`;
+  }
+  function dashboardHTML(){
+    const name = S.settings.preferredName || "";
+    const active = new Set(S.settings.areas||[]);
+    const chips = AREAS.map(a=>`
+      <label class="chip ${active.has(a.key)?'sel':''}">
+        <input type="checkbox" data-area="${a.key}" ${active.has(a.key)?'checked':''}/>
+        ${a.label}
+      </label>`).join(' ');
+    const allOn = AREAS.every(a=>active.has(a.key));
+    return `
+      <h3>Parent Dashboard</h3>
+      <div class="field">
+        <label>Preferred name for your player</label>
+        <input id="prefName" value="${name.replace(/"/g,'&quot;')}" placeholder="e.g., Zeva" />
+        <p class="meta">This name can appear inside stories to make them feel personal.</p>
+      </div>
+      <div class="field">
+        <div class="row space" style="align-items:center">
+          <label>Areas to focus on (hidden from player)</label>
+          <label class="chip"><input id="toggleAll" type="checkbox" ${allOn?'checked':''}/> Select All</label>
+        </div>
+        <div class="row" style="gap:8px">${chips}</div>
+      </div>
+      <div class="row space" style="margin-top:12px">
+        <button class="btn ghost" id="pm-close">Done</button>
+        <div class="row" style="gap:8px">
+          <button class="btn ghost" id="pm-reset">Reset Progress</button>
+          <button class="btn" id="pm-save">Save</button>
+        </div>
+      </div>`;
+  }
+  function bindPinHandlers(){
+    $('#pm-cancel')?.addEventListener('click', closeParentModal);
+    $('#pm-savepin')?.addEventListener('click', ()=>{
+      const p1 = $('#pin1').value.trim(), p2=$('#pin2').value.trim();
+      if (p1.length!==4 || p2.length!==4 || p1!==p2) { alert('Please enter the same 4-digit PIN twice.'); return; }
+      S.settings.pinSet=true; S.settings.pinHash=hashPin(p1); LS.set(S);
+      $('#modalContent').innerHTML = dashboardHTML(); bindDashHandlers();
+    });
+    $('#pm-enter')?.addEventListener('click', ()=>{
+      const pe = $('#pinEntry').value.trim();
+      if (hashPin(pe)!==S.settings.pinHash) { alert('Incorrect PIN.'); return; }
+      $('#modalContent').innerHTML = dashboardHTML(); bindDashHandlers();
+    });
+  }
+  function bindDashHandlers(){
+    $('#pm-close').onclick = closeParentModal;
+    $('#pm-reset').onclick = ()=>{ resetProgress(true); alert('Progress cleared.'); };
+    $('#pm-save').onclick = ()=>{
+      const name = $('#prefName').value.trim();
+      const all = $$('.chip input[type=checkbox][data-area]');
+      const selected = all.filter(x=>x.checked).map(x=>x.getAttribute('data-area'));
+      if (!selected.length){ alert('Pick at least one area.'); return; }
+      S.settings.preferredName = name;
+      S.settings.areas = selected;
+      LS.set(S);
+      alert('Saved. These choices filter what the player sees.');
+      renderActiveAreas();
+      closeParentModal();
+    };
+    $('#toggleAll').onchange = (e)=>{
+      const on = e.target.checked;
+      $$('.chip input[type=checkbox][data-area]').forEach(cb=>{
+        cb.checked = on;
+        cb.closest('.chip').classList.toggle('sel', on);
+      });
+    };
+    $$('.chip input[type=checkbox][data-area]').forEach(cb=>{
+      cb.onchange = ()=> cb.closest('.chip').classList.toggle('sel', cb.checked);
+    });
+  }
+  $('#parentModal').addEventListener('click', (e)=>{ if (e.target.id==='parentModal') closeParentModal(); });
+
+  // Initial save
+  LS.set(S);
 </script>
 </body>
 </html>
