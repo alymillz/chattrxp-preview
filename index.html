@@ -39,12 +39,6 @@
   .topbar{position:relative}
   .badge{font-size:12px;color:#aab3bd}
   .pill{display:inline-block;padding:4px 10px;border-radius:999px;background:#273042;color:#cfe8f8;font-size:12px}
-  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:50}
-  .modal{width:min(720px,92vw);background:#171a20;border:1px solid #2b3240;border-radius:16px;padding:18px}
-  .hr{height:1px;background:#2a3240;margin:10px 0}
-  .chips{display:flex;flex-wrap:wrap;gap:8px}
-  .chip{padding:8px 12px;border-radius:999px;background:#243041;color:#d9e7f4;cursor:pointer;border:1px solid #314058}
-  .chip.sel{outline:2px solid var(--primary)}
   .confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden}
   .piece{position:absolute;font-size:22px;animation:fall 1.2s linear forwards}
   @keyframes fall{to{transform:translateY(100vh) rotate(360deg);opacity:0}}
@@ -107,13 +101,13 @@
   </div>
 </div>
 
-<!-- Connect to Supabase -->
+<!-- ✅ Supabase Connection Block -->
 <script type="module">
   import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-  // Paste your own values here:
-  const SUPABASE_URL  = 'YOUR_PROJECT_URL_HERE';
-  const SUPABASE_ANON = 'YOUR_ANON_KEY_HERE';
+  // ✅ Your actual Supabase project details
+  const SUPABASE_URL  = 'https://ogogdoumibnaregigoap.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9nb2dkb3VtaWJuYXJlZ2lnb2FwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAxNTM2MTcsImV4cCI6MjA3NTcyOTYxN30.s1Ggyfqb-K2dN9VIX9c7vM0T_KSoC7Gems92TxEIk48';
 
   const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
   window.__sb = sb;
@@ -143,96 +137,53 @@
   window.fetchBatch = fetchBatch;
 </script>
 
+<!-- 🎮 Main Game Script -->
 <script>
-/* ----------------------- Flags & URL helpers ----------------------- */
 const DEV_MODE = location.search.includes('dev=1');
-const RESET_NOW = location.search.includes('reset=1');
-const url = new URL(location.href);
-const PARAM_PROFILE = (url.searchParams.get('profile') || '').trim();
-
-/* ----------------------- Data: Areas ----------------------- */
 const AREAS = [
   { id:'chill',  name:'Calm & Reset' },
   { id:'reading',name:'Read the Room' },
   { id:'follow', name:'Show Up & Follow Through' },
   { id:'friend', name:'Friendship Moves' },
 ];
-const Q = []; // questions now come from Supabase
+const Q = [];
+let POOL = [];
+let servedCount = 0;
+let awaitingManualAdvance = false;
+let currentQ = null;
+const POINTS_PER_CORRECT=10;
 
-/* ----------------------- State & Storage ----------------------- */
-const LS_KEY = "cxp_state_v2";
-function defaultState(){
-  return {
-    settings:{ parentPins:[], enabledAreas: AREAS.map(a=>a.id) },
-    profiles:{ "Player": baseProfile() },
-    activeProfile:"Player"
-  };
-}
-function baseProfile(){ return { avatar:'😎✨', xp:0, level:1, streak:0, completed:{}, answeredToday:0 }; }
-let S = loadState();
-function saveState(){ localStorage.setItem(LS_KEY, JSON.stringify(S)); }
-function loadState(){ try{return JSON.parse(localStorage.getItem(LS_KEY)||"null")||defaultState();}catch{return defaultState();} }
-
-/* ----------------------- Helper functions ----------------------- */
 function $(s){return document.querySelector(s)}
 function $all(s){return [...document.querySelectorAll(s)]}
 
-/* ----------------------- Build and play ----------------------- */
-async function buildPool(){
-  const enabled = new Set(S.settings.enabledAreas);
-  const areas = [...enabled];
-  const batch = await window.fetchBatch(areas, 300);
-  POOL = batch.map((q, idx) => ({ q, idx }));
-  shuffleInPlace(POOL);
-}
-
-/* ----------------------- Quiz logic ----------------------- */
-let POOL = [];
-let servedCount = 0;
-let retryQueue = [];
-let awaitingManualAdvance = false;
-let currentQ = null;
-
-const RETRY_GAP = 2;
-const POINTS_PER_CORRECT = 10;
-
 $('#btn-exit').onclick=()=>show('#screen-home');
 $('#btn-next').onclick=()=>next(true);
-
 $('#btn-play').onclick=()=>startSession();
-$('#btn-profile').onclick=()=>{ $('#pAvatar').textContent=activeP().avatar; show('#screen-profile'); };
 $('#btn-play-again').onclick=()=>startSession();
-$('#btn-reset').onclick=()=>{ const n=getProfileName(); S.profiles[n]={...baseProfile(),avatar:S.profiles[n]?.avatar||'😎✨'}; saveState(); alert('Progress reset.'); };
+$('#btn-reset').onclick=()=>alert('Progress reset (local only).');
 
+async function buildPool(){
+  const areas=['chill','reading','follow','friend'];
+  const batch=await window.fetchBatch(areas,300);
+  POOL=batch.map((q,idx)=>({q,idx}));
+  shuffleInPlace(POOL);
+}
 async function startSession(){
   await buildPool();
-  servedCount=0; retryQueue=[]; awaitingManualAdvance=false;
-  $('#avatar').textContent=activeP().avatar;
-  renderAreaPill(); renderBars();
-  show('#screen-quiz');
-  next(true);
+  servedCount=0;awaitingManualAdvance=false;
+  $('#avatar').textContent='😎✨';
+  renderBars();show('#screen-quiz');next(true);
 }
-
-function next(manual=false){
-  if (awaitingManualAdvance && !manual) return;
-  $('#btn-next').disabled=true;
-  $('#feedback').textContent='';
-  const i = servedCount;
-  if (!POOL[i]) { show('#screen-home'); return; }
-  servedCount++;
-  loadQuestion(i);
-}
-
+function next(manual=false){if(awaitingManualAdvance&&!manual)return;$('#btn-next').disabled=true;$('#feedback').textContent='';const i=servedCount;if(!POOL[i]){show('#screen-home');return;}servedCount++;loadQuestion(i);}
 function loadQuestion(i){
-  const base = POOL[i].q;
-  const map=[0,1,2,3]; shuffleInPlace(map);
-  const shuffledA = map.map(k=>base.a[k]);
-  const shuffledE = map.map(k=>base.e[k]);
-  const correctIdx = map.indexOf(base.c);
-
+  const base=POOL[i].q;
+  const map=[0,1,2,3];shuffleInPlace(map);
+  const shuffledA=map.map(k=>base.a[k]);
+  const shuffledE=map.map(k=>base.e[k]);
+  const correctIdx=map.indexOf(base.c);
   currentQ={__idx:i,area:base.area,q:base.q,a:shuffledA,e:shuffledE,correctIdx};
   $('#qtext').textContent=currentQ.q;
-  const box=$('#answers'); box.innerHTML='';
+  const box=$('#answers');box.innerHTML='';
   currentQ.a.forEach((t,ix)=>{
     const d=document.createElement('div');
     d.className='answer';
@@ -241,52 +192,24 @@ function loadQuestion(i){
     box.appendChild(d);
   });
 }
-
 function choose(choiceIdx,el){
   $all('.answer').forEach(a=>a.onclick=null);
   const correct=(choiceIdx===currentQ.correctIdx);
-  const p=activeP();
   if(correct){
     el.classList.add('correct');
-    markCompleted(currentQ.__idx);
-    p.streak=(p.streak||0)+1;
-    awardPoints(p);
     $('#feedback').textContent=`✅ Nice. ${currentQ.e[choiceIdx]}`;
     confetti();
-  } else {
+  }else{
     el.classList.add('wrong');
-    p.streak=0;
     $('#feedback').textContent=`Thanks for thinking it through. ${currentQ.e[choiceIdx]}`;
   }
-  saveState(); renderBars(); awaitingManualAdvance=true; $('#btn-next').disabled=false;
+  awaitingManualAdvance=true;$('#btn-next').disabled=false;
 }
-
-/* ----------------------- Render helpers ----------------------- */
-function renderBars(){
-  const p=activeP();
-  $('#streak').textContent=p.streak||0;
-  $('#xptext').textContent=`XP ${p.xp||0}`;
-  $('#level').textContent=p.level||1;
-  const pct=Math.min(100,(p.xp%100));
-  $('#xpfill').style.width=pct+'%';
-}
-function awardPoints(p){p.xp=(p.xp||0)+POINTS_PER_CORRECT;p.level=1+Math.floor((p.xp||0)/100);}
-function renderAreaPill(){
-  const enabled=new Set(S.settings.enabledAreas);
-  const names=AREAS.filter(a=>enabled.has(a.id)).map(a=>a.name);
-  $('#pill-areas').textContent=names.length===AREAS.length?'All Modes':names.join(' • ');
-}
-
-/* ----------------------- Utils ----------------------- */
+function renderBars(){$('#xptext').textContent=`XP 0`;$('#level').textContent=1;$('#xpfill').style.width='0%';}
 function shuffleInPlace(arr){for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}}
-
-/* ----------------------- Profiles (simplified local) ----------------------- */
-function getProfileName(){return S.activeProfile||"Player";}
-function activeP(){const n=getProfileName();if(!S.profiles[n])S.profiles[n]=baseProfile();return S.profiles[n];}
-function markCompleted(idx){const p=activeP();p.completed[idx]=true;}
-function confetti(){const c=$('#confetti')||document.body.appendChild(Object.assign(document.createElement('div'),{id:'confetti',className:'confetti'}));for(let i=0;i<20;i++){const s=document.createElement('span');s.className='piece';s.textContent=['✨','💫','🌟','🎉','⭐'][Math.floor(Math.random()*5)];s.style.left=(Math.random()*100)+'%';s.style.animationDelay=(Math.random()*0.25)+'s';c.appendChild(s);setTimeout(()=>s.remove(),1400);}}
 function show(id){['#screen-home','#screen-quiz','#screen-profile'].forEach(sel=>$(sel).classList.add('hide'));$(id).classList.remove('hide');}
-function boot(){show('#screen-home');}boot();
+function confetti(){const c=document.body.appendChild(Object.assign(document.createElement('div'),{id:'confetti',className:'confetti'}));for(let i=0;i<20;i++){const s=document.createElement('span');s.className='piece';s.textContent=['✨','💫','🌟','🎉','⭐'][Math.floor(Math.random()*5)];s.style.left=(Math.random()*100)+'%';s.style.animationDelay=(Math.random()*0.25)+'s';c.appendChild(s);setTimeout(()=>s.remove(),1400);}}
+show('#screen-home');
 </script>
 </body>
 </html>
