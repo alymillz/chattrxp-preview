@@ -55,6 +55,9 @@
   .confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden}
   .piece{position:absolute;font-size:22px;animation:fall 1.2s linear forwards}
   @keyframes fall{to{transform:translateY(100vh) rotate(360deg);opacity:0}}
+
+  /* hide Progress section */
+  #progress-section { display:none; }
 </style>
 </head>
 <body>
@@ -141,6 +144,12 @@
       </div>
 
       <div class="section">
+        <div class="kicker">Age Category (for active profile)</div>
+        <div class="chips" id="age-chips"></div>
+        <p class="meta">Parents pick the track: 8–10, 11–13, or 14+. Content adjusts automatically.</p>
+      </div>
+
+      <div class="section">
         <div class="kicker">Focus Areas (shown to parents only)</div>
         <div class="chips" id="area-chips"></div>
         <div class="row" style="margin-top:8px;gap:8px">
@@ -150,7 +159,7 @@
         <p class="meta">Kids won’t see area names; they just tap Play.</p>
       </div>
 
-      <div class="section">
+      <div class="section" id="progress-section">
         <div class="kicker">Progress</div>
         <div class="row" style="gap:8px">
           <button class="btn ghost" id="btn-reset-active">Reset Active Profile</button>
@@ -175,23 +184,21 @@
   </div>
 </div>
 
-<!-- ✅ Supabase Connection Block -->
+<!-- ✅ Supabase Connection -->
 <script type="module">
   import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-  // ✅ Your Supabase project details
   const SUPABASE_URL  = 'https://ogogdoumibnaregigoap.supabase.co';
   const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9nb2dkb3VtaWJuYXJlZ2lnb2FwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAxNTM2MTcsImV4cCI6MjA3NTcyOTYxN30.s1Ggyfqb-K2dN9VIX9c7vM0T_KSoC7Gems92TxEIk48';
-
   const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
   window.__sb = sb;
 
-  // Fetch questions from Supabase (matches your app's expected shape)
-  async function fetchBatch(areaIds, limit = 300) {
+  async function fetchBatch(areaIds, age, limit = 300) {
     const { data, error } = await sb
       .from('questions')
-      .select('id, area_id, prompt, choices, explanations, correct_index')
+      .select('id, area_id, prompt, choices, explanations, correct_index, age_group')
       .in('area_id', areaIds)
+      .eq('age_group', age)
       .eq('is_active', true)
       .limit(limit);
 
@@ -211,23 +218,21 @@
   window.fetchBatch = fetchBatch;
 </script>
 
-<!-- 🎮 Main Game + Parent Dashboard Script -->
+<!-- 🎮 Main Game + Dashboard -->
 <script>
-/* ----------------------- Flags & URL helpers ----------------------- */
 const DEV_MODE = location.search.includes('dev=1');
 const RESET_NOW = location.search.includes('reset=1');
 const url = new URL(location.href);
 const PARAM_PROFILE = (url.searchParams.get('profile') || '').trim();
 
-/* ----------------------- Data: Areas ----------------------- */
 const AREAS = [
   { id:'chill',  name:'Calm & Reset' },
   { id:'reading',name:'Read the Room' },
   { id:'follow', name:'Show Up & Follow Through' },
   { id:'friend', name:'Friendship Moves' },
 ];
+const AGE_GROUPS = ['8-10','11-13','14+'];
 
-/* ----------------------- State & Storage ----------------------- */
 const LS_KEY = "cxp_state_v2";
 function defaultState(){
   return {
@@ -236,7 +241,7 @@ function defaultState(){
     activeProfile:"Player"
   };
 }
-function baseProfile(){ return { avatar:'😎✨', xp:0, level:1, streak:0, completed:{}, answeredToday:0 }; }
+function baseProfile(){ return { avatar:'😎✨', xp:0, level:1, streak:0, completed:{}, answeredToday:0, age:'11-13' }; }
 let S = loadState();
 function saveState(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(S)); }catch{} }
 function loadState(){
@@ -249,30 +254,30 @@ function loadState(){
   }catch{ return defaultState(); }
 }
 
-/* ----------------------- Helpers ----------------------- */
 function $(s){return document.querySelector(s)}
 function $all(s){return [...document.querySelectorAll(s)]}
 function show(id){['#screen-home','#screen-quiz','#screen-profile'].forEach(sel=>$(sel).classList.add('hide'));$(id).classList.remove('hide');}
 function shuffleInPlace(arr){for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}}
 function confetti(){const c=document.body.appendChild(Object.assign(document.createElement('div'),{id:'confetti',className:'confetti'}));for(let i=0;i<20;i++){const s=document.createElement('span');s.className='piece';s.textContent=['✨','💫','🌟','🎉','⭐'][Math.floor(Math.random()*5)];s.style.left=(Math.random()*100)+'%';s.style.animationDelay=(Math.random()*0.25)+'s';c.appendChild(s);setTimeout(()=>s.remove(),1400);}}
 
-/* ----------------------- Profiles ----------------------- */
+/* Profiles */
 function getProfileName(){ return PARAM_PROFILE || S.activeProfile || "Player"; }
 function ensureProfile(name){ if(!S.profiles[name]) S.profiles[name]=baseProfile(); }
 function activeP(){ const n=getProfileName(); ensureProfile(n); S.activeProfile=n; return S.profiles[n]; }
 function renderHomeBadge(){ $('#active-profile-badge').textContent = `Active profile: ${getProfileName()}`; }
 
-/* ----------------------- Build question pool (Supabase) ----------------------- */
-let POOL = []; // { q, idx }
+/* Question pool */
+let POOL = [];
 async function buildPool(){
   const enabled = new Set(S.settings.enabledAreas);
   const areas = [...enabled];
-  const batch = await window.fetchBatch(areas, 300);
+  const age = activeP().age || '11-13';
+  const batch = await window.fetchBatch(areas, age, 300);
   POOL = batch.map((q, idx) => ({ q, idx }));
   shuffleInPlace(POOL);
 }
 
-/* ----------------------- Quiz Engine (XP/Level/Streak) ----------------------- */
+/* Quiz engine */
 let servedCount = 0;
 let awaitingManualAdvance = false;
 let currentQ = null;
@@ -280,7 +285,6 @@ const POINTS_PER_CORRECT = 10;
 
 $('#btn-exit').onclick=()=>show('#screen-home');
 $('#btn-next').onclick=()=>next(true);
-
 $('#btn-play').onclick=()=>startSession();
 $('#btn-profile').onclick=()=>{ $('#pAvatar').textContent=activeP().avatar; show('#screen-profile'); };
 $('#btn-play-again').onclick=()=>startSession();
@@ -328,26 +332,26 @@ function choose(choiceIdx,el){
 function renderBars(){ const p=activeP(); $('#streak').textContent=p.streak||0; $('#xptext').textContent=`XP ${p.xp||0}`; $('#level').textContent=p.level||1; $('#xpfill').style.width=Math.min(100,(p.xp%100))+'%'; }
 function awardPoints(p){ p.xp=(p.xp||0)+POINTS_PER_CORRECT; p.level=1+Math.floor((p.xp||0)/100); }
 function markCompleted(idx){ activeP().completed[idx]=true; }
-function renderAreaPill(){ const enabled=new Set(S.settings.enabledAreas); const names=AREAS.filter(a=>enabled.has(a.id)).map(a=>a.name); $('#pill-areas').textContent=names.length===AREAS.length?'All Modes':names.join(' • '); }
+function renderAreaPill(){ 
+  const enabled=new Set(S.settings.enabledAreas); 
+  const names=AREAS.filter(a=>enabled.has(a.id)).map(a=>a.name); 
+  const label = names.length===AREAS.length?'All Modes':names.join(' • ');
+  const age = activeP().age || '11-13';
+  $('#pill-areas').textContent = `${label} • ${age}`;
+}
 
-/* ----------------------- Avatar picker ----------------------- */
+/* Avatar picker */
 $all('#avatars span').forEach(sp=>{
   if (sp.textContent===activeP().avatar) sp.classList.add('sel');
   sp.onclick=()=>{ $all('#avatars span').forEach(x=>x.classList.remove('sel')); sp.classList.add('sel'); activeP().avatar=sp.textContent; saveState(); renderHomeBadge(); };
 });
 
-/* ----------------------- Parent Modal & Dashboard ----------------------- */
+/* Parent modal */
 const elParentModal = $('#parent-modal');
 $('#btn-gear').onclick = ()=>{ openParentModal(); };
 $('#close-parent').onclick = ()=>{ elParentModal.classList.add('hide'); };
-
-/* New: also close by clicking backdrop or pressing Esc */
-elParentModal.addEventListener('click',(e)=>{
-  if(e.target===elParentModal){ elParentModal.classList.add('hide'); }
-});
-document.addEventListener('keydown',(e)=>{
-  if(e.key==='Escape' && !elParentModal.classList.contains('hide')) elParentModal.classList.add('hide');
-});
+elParentModal.addEventListener('click',(e)=>{ if(e.target===elParentModal){ elParentModal.classList.add('hide'); }});
+document.addEventListener('keydown',(e)=>{ if(e.key==='Escape' && !elParentModal.classList.contains('hide')) elParentModal.classList.add('hide'); });
 
 function openParentModal(){
   $('#pin-input').value=''; $('#pin-msg').textContent='';
@@ -374,7 +378,8 @@ $('#btn-pin-help').onclick = ()=>{
 function showDash(){
   $('#parent-locked').classList.add('hide');
   $('#parent-dash').classList.remove('hide');
-  renderProfilesAdmin(); renderAreaChips(); $('#pin-admin-msg').textContent='';
+  renderProfilesAdmin(); renderAreaChips(); renderAgeChips();
+  $('#pin-admin-msg').textContent='';
 }
 
 /* Profiles admin */
@@ -382,9 +387,9 @@ function renderProfilesAdmin(){
   const cont = $('#profile-chips'); cont.innerHTML='';
   Object.keys(S.profiles).forEach(name=>{
     const d=document.createElement('div');
-    d.className='chip'+(name===getProfileName()?' sel':'');
+    d.className='chip'+(name===getProfileName()?' sel':'' );
     d.textContent=name;
-    d.onclick=()=>{ S.activeProfile=name; saveState(); renderProfilesAdmin(); renderHomeBadge(); };
+    d.onclick=()=>{ S.activeProfile=name; saveState(); renderProfilesAdmin(); renderHomeBadge(); renderAgeChips(); };
     cont.appendChild(d);
   });
 }
@@ -393,7 +398,7 @@ $('#btn-add-profile').onclick=()=>{
   if (!name) return;
   if (!S.profiles[name]) S.profiles[name]=baseProfile();
   S.activeProfile=name; saveState(); $('#new-profile-name').value='';
-  renderProfilesAdmin(); renderHomeBadge();
+  renderProfilesAdmin(); renderHomeBadge(); renderAgeChips();
 };
 $('#btn-del-profile').onclick=()=>{
   const name=getProfileName();
@@ -401,12 +406,32 @@ $('#btn-del-profile').onclick=()=>{
   delete S.profiles[name]; S.activeProfile='Player'; saveState(); renderProfilesAdmin(); renderHomeBadge();
 };
 
+/* Age chips */
+function renderAgeChips(){
+  const cont = $('#age-chips'); 
+  if (!cont) return;
+  cont.innerHTML = '';
+  const prof = activeP();
+  AGE_GROUPS.forEach(age=>{
+    const d = document.createElement('div');
+    d.className = 'chip' + (prof.age === age ? ' sel' : '');
+    d.textContent = age;
+    d.onclick = () => {
+      prof.age = age;
+      saveState();
+      renderAgeChips();
+      renderAreaPill();
+    };
+    cont.appendChild(d);
+  });
+}
+
 /* Areas admin */
 function renderAreaChips(){
   const cont=$('#area-chips'); cont.innerHTML='';
   AREAS.forEach(a=>{
     const d=document.createElement('div');
-    d.className='chip'+(S.settings.enabledAreas.includes(a.id)?' sel':'');
+    d.className='chip'+(S.settings.enabledAreas.includes(a.id)?' sel':'' );
     d.textContent=a.name;
     d.onclick=()=>{
       const set=new Set(S.settings.enabledAreas);
@@ -421,38 +446,19 @@ $('#btn-save-areas').onclick=()=>{ saveState(); alert('Saved. Kids will only see
 
 /* Progress admin */
 $('#btn-reset-active').onclick=()=>{ const n=getProfileName(); S.profiles[n]={...baseProfile(),avatar:(S.profiles[n]?.avatar||'😎✨')}; saveState(); alert(`Reset progress for ${n}.`); };
-$('#btn-export').onclick=()=>{
-  const blob = new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='chattrxp_progress.json'; a.click(); URL.revokeObjectURL(a.href);
-};
+$('#btn-export').onclick=()=>{ const blob = new Blob([JSON.stringify(S,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='chattrxp_progress.json'; a.click(); URL.revokeObjectURL(a.href); };
 $('#btn-import').onclick=()=>$('#import-file').click();
-$('#import-file').onchange=(e)=>{
-  const f=e.target.files?.[0]; if(!f) return;
-  const r=new FileReader();
-  r.onload=()=>{ try{ const obj=JSON.parse(r.result); S=obj; saveState(); renderProfilesAdmin(); renderAreaChips(); renderHomeBadge(); alert('Imported.'); }catch{ alert('Invalid file.'); } };
-  r.readAsText(f);
-};
+$('#import-file').onchange=(e)=>{ const f=e.target.files?.[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ try{ const obj=JSON.parse(r.result); S=obj; saveState(); renderProfilesAdmin(); renderAreaChips(); renderHomeBadge(); alert('Imported.'); }catch{ alert('Invalid file.'); } }; r.readAsText(f); };
 
 /* PIN admin */
-$('#btn-add-pin').onclick=()=>{
-  const p=($('#pin-new').value||'').trim(); if(!p) return;
-  const set=new Set(S.settings.parentPins); set.add(p);
-  S.settings.parentPins=[...set]; $('#pin-new').value=''; saveState();
-  $('#pin-admin-msg').textContent=`Stored PINs: ${S.settings.parentPins.length}`;
-};
+$('#btn-add-pin').onclick=()=>{ const p=($('#pin-new').value||'').trim(); if(!p) return; const set=new Set(S.settings.parentPins); set.add(p); S.settings.parentPins=[...set]; $('#pin-new').value=''; saveState(); $('#pin-admin-msg').textContent=`Stored PINs: ${S.settings.parentPins.length}`; };
 $('#btn-list-pins').onclick=()=>{ $('#pin-admin-msg').textContent=`Stored PINs: ${S.settings.parentPins.length}`; };
-$('#btn-clear-pins').onclick=()=>{
-  if (confirm('Remove all stored PINs?')){ S.settings.parentPins=[]; saveState(); $('#pin-admin-msg').textContent='All PINs cleared.'; }
-};
+$('#btn-clear-pins').onclick=()=>{ if (confirm('Remove all stored PINs?')){ S.settings.parentPins=[]; saveState(); $('#pin-admin-msg').textContent='All PINs cleared.'; } };
 
-/* ----------------------- Boot ----------------------- */
+/* Boot */
 (function boot(){
   ensureProfile(getProfileName());
-  if (RESET_NOW){
-    const n=getProfileName();
-    S.profiles[n] = { ...baseProfile(), avatar:(S.profiles[n]?.avatar||'😎✨') };
-    saveState();
-  }
+  if (RESET_NOW){ const n=getProfileName(); S.profiles[n] = { ...baseProfile(), avatar:(S.profiles[n]?.avatar||'😎✨') }; saveState(); }
   $('#pAvatar').textContent=activeP().avatar;
   $('#avatar').textContent=activeP().avatar;
   renderHomeBadge(); renderAreaPill(); renderBars();
@@ -463,3 +469,4 @@ $('#btn-clear-pins').onclick=()=>{
 <div id="confetti" class="confetti"></div>
 </body>
 </html>
+
