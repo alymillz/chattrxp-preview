@@ -972,6 +972,44 @@ function boot(){
 }
 boot();
 </script>
+<!-- Connect to Supabase -->
+<script type="module">
+  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+  // Paste your real keys here:
+  const SUPABASE_URL  = 'YOUR_PROJECT_URL_HERE';
+  const SUPABASE_ANON = 'YOUR_ANON_KEY_HERE';
+
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+  window.__sb = sb; // makes it visible to your existing script
+
+  // Function to load questions from your Supabase table
+  async function fetchBatch(areaIds, limit = 200) {
+    const { data, error } = await sb
+      .from('questions')
+      .select('id, area_id, prompt, choices, explanations, correct_index')
+      .in('area_id', areaIds)
+      .eq('is_active', true)
+      .limit(limit);
+
+    if (error) {
+      console.error('Error loading questions:', error);
+      return [];
+    }
+
+    // reshape to match your existing format
+    return data.map(row => ({
+      __id: row.id,
+      area: row.area_id,
+      q: row.prompt,
+      a: row.choices,
+      e: row.explanations,
+      c: row.correct_index
+    }));
+  }
+
+  window.fetchBatch = fetchBatch;
+</script>
 </body>
 </html>
 
