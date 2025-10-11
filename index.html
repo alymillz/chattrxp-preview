@@ -107,883 +107,17 @@
   </div>
 </div>
 
-<!-- Parent Modal -->
-<div class="modal-backdrop hide" id="parent-modal">
-  <div class="modal">
-    <div class="row between">
-      <h3 style="margin:0">Parent</h3>
-      <button class="linklike" id="close-parent">Close</button>
-    </div>
-    <div id="parent-locked" class="section">
-      <div class="kicker">Enter Parent PIN</div>
-      <input type="password" id="pin-input" placeholder="4–8 digits" />
-      <div class="row" style="margin-top:8px;gap:8px">
-        <button class="btn" id="btn-pin-enter">Enter</button>
-        <button class="btn ghost" id="btn-pin-help">Forgot?</button>
-      </div>
-      <p class="meta" id="pin-msg"></p>
-    </div>
-
-    <div id="parent-dash" class="hide">
-      <div class="section">
-        <div class="kicker">Child Profiles</div>
-        <div class="chips" id="profile-chips"></div>
-        <div class="row" style="margin-top:8px;gap:8px">
-          <input type="text" id="new-profile-name" placeholder="Add a profile (e.g., Zeva)" />
-          <button class="btn" id="btn-add-profile">Add</button>
-          <button class="btn ghost" id="btn-del-profile">Delete Active</button>
-        </div>
-        <p class="meta">Use URL like <code>?profile=Zeva</code> to open directly.</p>
-      </div>
-
-      <div class="section">
-        <div class="kicker">Focus Areas (shown to parents only)</div>
-        <div class="chips" id="area-chips"></div>
-        <div class="row" style="margin-top:8px;gap:8px">
-          <button class="btn" id="btn-all-areas">All Areas</button>
-          <button class="btn ghost" id="btn-save-areas">Save</button>
-        </div>
-        <p class="meta">Kids won’t see area names; they just tap Play.</p>
-      </div>
-
-      <div class="section">
-        <div class="kicker">Progress</div>
-        <div class="row" style="gap:8px">
-          <button class="btn ghost" id="btn-reset-active">Reset Active Profile</button>
-          <button class="btn ghost" id="btn-export">Export Progress (JSON)</button>
-          <button class="btn ghost" id="btn-import">Import Progress</button>
-          <input type="file" id="import-file" class="hide" accept="application/json"/>
-        </div>
-      </div>
-
-      <div class="section">
-        <div class="kicker">Parent PINs</div>
-        <p class="meta">You can store more than one PIN (e.g., two parents).</p>
-        <div class="row" style="gap:8px">
-          <input type="password" id="pin-new" placeholder="Add new PIN" />
-          <button class="btn" id="btn-add-pin">Add PIN</button>
-          <button class="btn ghost" id="btn-list-pins">List Count</button>
-          <button class="btn ghost" id="btn-clear-pins">Clear All PINs</button>
-        </div>
-        <p class="meta" id="pin-admin-msg"></p>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div id="confetti" class="confetti"></div>
-
-<script>
-/* ----------------------- Flags & URL helpers ----------------------- */
-const DEV_MODE = location.search.includes('dev=1');             // no progress persistence
-const RESET_NOW = location.search.includes('reset=1');          // clears profile progress on load
-const url = new URL(location.href);
-const PARAM_PROFILE = (url.searchParams.get('profile') || '').trim();
-
-/* ----------------------- Data: Areas & Questions ----------------------- */
-/* Four areas; 10 questions each. Each item: { area, q, a[4], e[4], c } 
-   e[] = consequence/why for the chosen option (shown for BOTH correct and wrong)
-   c   = correct index BEFORE answer shuffling; we'll remap after shuffle.
-*/
-const AREAS = [
-  { id:'chill',  name:'Calm & Reset' },
-  { id:'reading',name:'Read the Room' },
-  { id:'follow', name:'Show Up & Follow Through' },
-  { id:'friend', name:'Friendship Moves' },
-];
-
-const Q = [];
-
-// --- Calm & Reset (10) ---
-Q.push(
-{area:'chill', q:"You’re waiting while your parent chats with a neighbor before heading to a restaurant. You feel impatience building. What keeps things smooth?",
- a:["Take a slow breath, count to ten, and wait beside them","Roll your eyes so they notice","Interrupt to say you’re bored","Wander off without saying anything"],
- e:[
-  "This helps your body settle and shows respect. The conversation ends faster when the vibe stays calm.",
-  "Eye-rolling adds tension and can make the chat last longer.",
-  "Interrupting can feel disrespectful and raises stress for everyone.",
-  "Now they have to find you—everything takes longer and feels unsafe."
- ],
- c:0},
-{area:'chill', q:"You’re frustrated after a tough game. What’s a good first move?",
- a:["Step aside for two minutes to cool down","Post a rant in the team chat","Blame a teammate immediately","Quit the next game"],
- e:[
-  "Short breaks help your brain reset so you can talk clearly after.",
-  "Rants can stick online and hurt trust.",
-  "Blaming shuts people down and blocks solutions.",
-  "Quitting fast can become a habit; decide later when calm."
- ],
- c:0},
-{area:'chill', q:"Your heart is racing before presenting. What helps most right now?",
- a:["Inhale for 4, exhale for 6 — three times","Scroll your phone to distract yourself","Tell yourself you’ll fail anyway","Skip your turn"],
- e:[
-  "Longer exhales signal safety to your nervous system.",
-  "Scrolling usually spikes nerves afterward.",
-  "Harsh self-talk makes your brain lock up.",
-  "Avoiding keeps the fear big next time."
- ],
- c:0},
-{area:'chill', q:"Someone bumps into you in a crowded hallway. Best move first?",
- a:["Pause and check your body before reacting","Shove back so they learn","Yell about personal space","Stare them down"],
- e:[
-  "A tiny pause prevents mistakes and keeps you in control.",
-  "Escalation brings drama or trouble.",
-  "Yelling raises the chance of conflict and embarrassment.",
-  "Staring invites a challenge you probably don’t want."
- ],
- c:0},
-{area:'chill', q:"Your sibling borrows your charger without asking. You feel hot. What next?",
- a:["Say you’ll talk in five minutes","Grab it back silently","Send an angry text to the family chat","Hide their stuff later"],
- e:[
-  "Giving yourself time helps you speak clearly and be heard.",
-  "Silence can store up resentment.",
-  "Public call-outs create sides and shame.",
-  "Payback keeps the cycle going."
- ],
- c:0},
-{area:'chill', q:"A group text gets noisy while you’re studying. What keeps focus?",
- a:["Silence the thread for an hour and finish the section","Answer every ping fast","Complain that people won’t stop","Leave the group permanently"],
- e:[
-  "You protect your attention and still reply soon.",
-  "Task-switching burns time and energy.",
-  "Complaints can spark more notifications.",
-  "All-or-nothing moves can backfire socially."
- ],
- c:0},
-{area:'chill', q:"You’re about to say something snappy. What’s a micro-reset?",
- a:["Sip water and look away for two seconds","Say the snappy thing and apologize later","Type it out and hit send fast","Hold your breath"],
- e:[
-  "Tiny pauses let better words show up.",
-  "Apologies can’t always repair sharp words.",
-  "Fast sends create slow problems.",
-  "Holding breath tightens your body more."
- ],
- c:0},
-{area:'chill', q:"You lost a round in a game. What’s a healthy reframe?",
- a:["‘New data. I’m learning.’","‘I’m terrible at everything.’","‘Everyone is against me.’","‘This proves I should quit.’"],
- e:[
-  "You turn the moment into information your brain can use.",
-  "Global put-downs drain motivation.",
-  "Assuming enemies spikes stress.",
-  "Quitting removes chances to improve."
- ],
- c:0},
-{area:'chill', q:"You feel sensory overload at a store. What helps now?",
- a:["Ask for a short break outside","Push through silently","Argue with your parent","Lie on the floor"],
- e:[
-  "Breaks reduce intensity so you can finish strong.",
-  "Overload usually gets louder if ignored.",
-  "Arguing adds extra noise.",
-  "This draws attention and may worsen stress."
- ],
- c:0},
-{area:'chill', q:"You’re upset with a friend. What first sentence keeps it calm?",
- a:["‘I want to talk, but I need five minutes to cool down.’","‘You always ruin things.’","‘Whatever. I don’t care.’","‘I’m fine.’ (when you’re not)"],
- e:[
-  "Clear + honest timing helps both of you talk well.",
-  "‘Always’ sounds like an attack and closes ears.",
-  "Dismissive words damage trust.",
-  "Saying you’re fine blocks support."
- ],
- c:0}
-);
-
-// --- Read the Room (10) ---
-Q.push(
-{area:'reading', q:"Your friend says, “Wow, great job...” with a flat face. What’s likely?",
- a:["They might be sarcastic, not serious praise","They’re definitely impressed","They have no feelings","They want you to repeat yourself loudly"],
- e:[
-  "Tone + face matter. Sarcasm often sounds positive but feels sharp.",
-  "Words alone can mislead without tone.",
-  "That’s an extreme assumption.",
-  "Volume isn’t the issue here."
- ],
- c:0},
-{area:'reading', q:"At lunch, the group gives short answers and looks at their trays. What’s the move?",
- a:["Lower energy and ask a small question","Tell a long story loudly","Press everyone for details","Judge them for being boring"],
- e:[
-  "Match the vibe and open a tiny door for talk.",
-  "Too much energy can feel pushy here.",
-  "Pressure makes people close up more.",
-  "Judging blocks connection."
- ],
- c:0},
-{area:'reading', q:"A classmate says “I’m fine” in a tight voice, shoulders high. What do you hear?",
- a:["They might not be fine; offer a simple check-in","Nothing is wrong at all","They want advice right now","They want a joke"],
- e:[
-  "Body cues say stress. Try: “Want to talk or want space?”",
-  "Ignoring cues misses chances to support.",
-  "Advice first can overwhelm.",
-  "Humor can land wrong when tense."
- ],
- c:0},
-{area:'reading', q:"You make a joke; one person laughs, one looks hurt. What’s best?",
- a:["Check in with the person who looks hurt","Keep joking to lighten it","Explain the joke to everyone","Ignore it; they’ll get over it"],
- e:[
-  "Repair first. Trust grows when you notice feelings.",
-  "More jokes can dig deeper.",
-  "Explaining usually doesn’t fix feelings.",
-  "Ignoring teaches people you don’t care."
- ],
- c:0},
-{area:'reading', q:"In a group chat, messages slow way down after your hot take. Best reaction?",
- a:["Read the room; ask if you came on too strong","Send five more messages to clarify","Tag people for responses","Leave the chat"],
- e:[
-  "Curiosity opens doors and repairs tone.",
-  "Flooding increases pressure.",
-  "Calling people out can embarrass them.",
-  "Leaving can look dramatic."
- ],
- c:0},
-{area:'reading', q:"Someone says, “Nice outfit,” but their eyes roll. What’s a safe read?",
- a:["They might be teasing; protect feelings first","It’s 100% kind praise","They’re asking for a hug","They want to borrow your clothes"],
- e:[
-  "Mismatch between words and face usually means sarcasm.",
-  "Tone/face disagree with the words.",
-  "Hug is unrelated here.",
-  "Borrowing isn’t implied."
- ],
- c:0},
-{area:'reading', q:"Your friend keeps checking the door during your story. What helps?",
- a:["Wrap up soon or ask if now’s a good time","Talk louder so they focus","Accuse them of being rude","Keep them with more details"],
- e:[
-  "You respect their time and keep the friendship easy.",
-  "Volume won’t fix divided attention.",
-  "Accusations fuel conflict.",
-  "Over-holding increases stress."
- ],
- c:0},
-{area:'reading', q:"The teacher’s voice gets calm and slow. What’s probably happening?",
- a:["They want everyone to settle and listen","They’re thrilled and celebrating","It’s a joke","They’re asking for a race"],
- e:[
-  "Low/slow usually signals ‘bring energy down’.",
-  "Calm+slow isn’t celebration mode.",
-  "No playful cues.",
-  "Not related."
- ],
- c:0},
-{area:'reading', q:"Your teammate is quiet after a mistake. A helpful open?",
- a:["“Want to shake it off together or take a minute?”","“You always choke.”","“Explain everything you did wrong.”","“Lol.”"],
- e:[
-  "You offer options without pressure.",
-  "Labels stick and hurt.",
-  "Interrogations feel harsh.",
-  "Dismissive replies sting."
- ],
- c:0},
-{area:'reading', q:"A friend says, “Do whatever you want,” flat voice, crossed arms. Likely meaning?",
- a:["They’re not actually okay with it","They fully agree","They want directions from you","They’re practicing voice acting"],
- e:[
-  "Body/voice say “not okay.” Time to check in.",
-  "Cues conflict with the words.",
-  "Not what those cues suggest.",
-  "Unlikely."
- ],
- c:0}
-);
-
-// --- Show Up & Follow Through (10) ---
-Q.push(
-{area:'follow', q:"You promised to bring a charger tomorrow. Best way to remember?",
- a:["Set a reminder for tonight and place it by your bag","Trust your memory","Tell three people to remind you","Wait until morning to look"],
- e:[
-  "Reminders + placement make success easy.",
-  "Brains forget—systems help.",
-  "Other people might forget too.",
-  "Morning rush adds risk."
- ],
- c:0},
-{area:'follow', q:"Group project due Friday. What keeps it moving?",
- a:["Break tasks small and claim one today","Wait for motivation","Assume someone else will do it","Start Thursday night"],
- e:[
-  "Small first steps build momentum.",
-  "Motivation follows action.",
-  "Assumptions cause crunch time.",
-  "Late starts add stress."
- ],
- c:0},
-{area:'follow', q:"Practice is at 4:00. You lose track of time. Better system?",
- a:["Calendar alert + 10-minute buffer","Ask a friend to text you daily","Hope you remember","Show up when you can"],
- e:[
-  "Buffers save you when things run long.",
-  "Good backup, but not a full system.",
-  "Hope isn’t a plan.",
-  "Inconsistent arrivals hurt the team."
- ],
- c:0},
-{area:'follow', q:"Your parent asks you to text when you arrive. What helps you do it?",
- a:["Create an automation/reminder on arrival","Promise yourself you’ll remember","Text later if you think about it","Only text if they ask again"],
- e:[
-  "Automatic triggers make habits stick.",
-  "Intent without a system slips.",
-  "Late check-ins cause worry.",
-  "Needs chasing—stressful for both."
- ],
- c:0},
-{area:'follow', q:"You owe two messages: one to a friend, one to a teacher. Better order?",
- a:["Teacher first, then friend","Friend first for fun","Neither—scroll first","Send a meme"],
- e:[
-  "Handling responsibility first builds trust.",
-  "Fun can be a reward after.",
-  "Scrolling delays both.",
-  "Doesn’t address the task."
- ],
- c:0},
-{area:'follow', q:"You broke a small rule. What rebuilds trust fastest?",
- a:["Own it, fix what you can, set a plan","Blame someone else","Hide it and hope","Say it wasn’t a big deal"],
- e:[
-  "Repair + plan shows growth.",
-  "Blame weakens trust.",
-  "Secrets usually surface.",
-  "Minimizing slows repair."
- ],
- c:0},
-{area:'follow', q:"Your routine falls apart on weekends. Smart tweak?",
- a:["Weekend version: shorter but consistent","Do nothing on weekends","Add more tasks on weekends","Start over every Sunday night"],
- e:[
-  "Consistency beats intensity.",
-  "Zero routines = Monday chaos.",
-  "Overloading collapses quickly.",
-  "Restarting weekly burns energy."
- ],
- c:0},
-{area:'follow', q:"You want to read daily. What makes it stick?",
- a:["Attach it to something you already do","Wait for the perfect time","Read two hours once a week","Only if friends join"],
- e:[
-  "Habits stick to habits.",
-  "Perfection kills progress.",
-  "Long gaps break momentum.",
-  "Relying on others adds friction."
- ],
- c:0},
-{area:'follow', q:"You keep forgetting water bottle. Easiest fix?",
- a:["Pack it the night before near the door","Write a long note about water","Buy a new one every time","Ask someone to hold it for you"],
- e:[
-  "Placement turns memory into muscle.",
-  "Notes are easy to ignore.",
-  "Wasteful and not a plan.",
-  "Depends on others."
- ],
- c:0},
-{area:'follow', q:"You say yes to too much. What boundary helps?",
- a:["‘Let me check and get back to you.’","Say yes and figure it out later","Ignore messages","Say no to everything"],
- e:[
-  "Buffer time lets you choose well.",
-  "Over-yes leads to drop-offs.",
-  "Ghosting hurts trust.",
-  "All-no shuts doors."
- ],
- c:0}
-);
-
-// --- Friendship Moves (10) ---
-Q.push(
-{area:'friend', q:"A friend texts during your focused time. What’s a solid reply?",
- a:["Finish this part, then reply with a kind note","Reply instantly every time","Ignore for hours","Send a random meme instead of a reply"],
- e:[
-  "You protect focus and still care for the friendship.",
-  "Instant responses train people to expect you always.",
-  "Silence can feel cold.",
-  "Confusing signals can create friction."
- ],
- c:0},
-{area:'friend', q:"You forgot a friend’s birthday. What now?",
- a:["Apologize and plan something small","Pretend you remembered","Blame your calendar","Ignore it completely"],
- e:[
-  "Honest repair matters more than being perfect.",
-  "They may find out and feel worse.",
-  "Excuses sound weak.",
-  "Silence can end friendships."
- ],
- c:0},
-{area:'friend', q:"You want to join a new group chat. Best first message?",
- a:["‘Hey! I’m new here—nice to meet you all.’","Five inside jokes","A hot take to get attention","Ask for full bios"],
- e:[
-  "Friendly and light opens doors.",
-  "Inside jokes can exclude.",
-  "High-conflict starts backfire.",
-  "Interrogations feel odd."
- ],
- c:0},
-{area:'friend', q:"You teased someone and they look hurt. Best next step?",
- a:["Check in and apologize","Say they’re too sensitive","Keep teasing to ‘prove’ it’s a joke","Leave the chat"],
- e:[
-  "Repair strengthens connection.",
-  "Labels make it worse.",
-  "More teasing digs deeper.",
-  "Avoiding leaves damage."
- ],
- c:0},
-{area:'friend', q:"Your friend fails a test. Supportive text?",
- a:["‘I’m here. Want to talk or want a distraction?’","‘Yikes, that’s rough.’ and nothing else","‘You should’ve studied.’","‘At least I did fine.’"],
- e:[
-  "Options respect their needs.",
-  "Short sympathy can feel empty.",
-  "Judgment shuts them down.",
-  "Comparison hurts."
- ],
- c:0},
-{area:'friend', q:"Plans changed last minute. How to handle?",
- a:["Suggest a backup plan or new time","Complain for an hour","Accuse them of not caring","Say nothing and stew"],
- e:[
-  "Flexibility keeps friendships easy.",
-  "Long complaints drain energy.",
-  "Accusations cause fights.",
-  "Stewing builds resentment."
- ],
- c:0},
-{area:'friend', q:"You notice a friend being left out. Tiny move?",
- a:["Invite them in with a small question","Wait to see if they fix it","Tell them to speak up louder","Ignore it"],
- e:[
-  "Small bridges matter a lot.",
-  "Waiting can leave them stuck.",
-  "Advice first can feel sharp.",
-  "Ignoring keeps the pattern."
- ],
- c:0},
-{area:'friend', q:"Your joke didn’t land. What’s graceful?",
- a:["‘My bad—reading the room. Moving on.’","Explain the joke in detail","Blame the audience","Tell a spicier joke"],
- e:[
-  "Owning it quickly resets the vibe.",
-  "Explaining rarely helps.",
-  "Blame breaks trust.",
-  "Doubling down risks more harm."
- ],
- c:0},
-{area:'friend', q:"You disagree with a friend. Better opener?",
- a:["‘I see it differently. Want to compare notes?’","‘You’re wrong.’","‘This is dumb.’","‘Whatever.’"],
- e:[
-  "Respect + curiosity keeps doors open.",
-  "Harsh starts block listening.",
-  "Insults end learning.",
-  "Dismissive words sting."
- ],
- c:0},
-{area:'friend', q:"You haven’t talked to someone in a while. How to reconnect?",
- a:["Send a simple ‘Hey, been a minute—how are you?’","Write a huge essay","Apologize for 20 minutes","Stay silent to avoid awkwardness"],
- e:[
-  "Light and friendly makes it easy to reply.",
-  "Long messages are hard to answer.",
-  "Over-apologies create pressure.",
-  "Silence keeps distance."
- ],
- c:0}
-);
-
-/* ----------------------- State & Storage ----------------------- */
-const LS_KEY = "cxp_state_v2";
-
-function defaultState(){
-  return {
-    settings:{
-      parentPins:[],                   // multiple PINs allowed
-      enabledAreas: AREAS.map(a=>a.id) // default: all on
-    },
-    profiles:{
-      "Player": baseProfile()
-    },
-    activeProfile:"Player"
-  };
-}
-function baseProfile(){
-  return { avatar:'😎✨', xp:0, level:1, streak:0, completed:{}, answeredToday:0 };
-}
-let S = loadState();
-
-// Dev mode does not persist progress fields
-function saveState(){
-  try {
-    const copy = JSON.parse(JSON.stringify(S));
-    if (DEV_MODE) {
-      // keep settings & profiles list, but zero out progress before saving
-      const ap = copy.activeProfile;
-      Object.keys(copy.profiles).forEach(name=>{
-        const p = copy.profiles[name];
-        p.xp=0; p.level=1; p.streak=0; p.completed={}; p.answeredToday=0;
-      });
-    }
-    localStorage.setItem(LS_KEY, JSON.stringify(copy));
-  } catch(_) {}
-}
-function loadState(){
-  let v = null;
-  try { v = JSON.parse(localStorage.getItem(LS_KEY)||"null"); } catch(_){}
-  if (!v) v = defaultState();
-  // ensure required pieces
-  v.settings ||= { parentPins:[], enabledAreas: AREAS.map(a=>a.id) };
-  v.profiles ||= {"Player":baseProfile()};
-  v.activeProfile ||= "Player";
-  return v;
-}
-
-// Profile helpers
-function getProfileName(){
-  return PARAM_PROFILE || S.activeProfile || "Player";
-}
-function ensureProfile(name){
-  if (!S.profiles[name]) S.profiles[name] = baseProfile();
-}
-function activeP(){
-  const name = getProfileName();
-  ensureProfile(name);
-  S.activeProfile = name;
-  return S.profiles[name];
-}
-
-// Param: reset=1 clears the active profile’s progress immediately
-if (RESET_NOW) {
-  const n = getProfileName();
-  S.profiles[n] = { ...baseProfile(), avatar: (S.profiles[n]?.avatar || '😎✨') };
-  saveState();
-}
-
-/* ----------------------- Parent Lock & Dashboard ----------------------- */
-const elParentModal = $('#parent-modal');
-$('#btn-gear').onclick = ()=>{ openParentModal(); };
-$('#close-parent').onclick = ()=>{ elParentModal.classList.add('hide'); };
-
-function openParentModal(){
-  $('#pin-input').value='';
-  $('#pin-msg').textContent='';
-  $('#parent-locked').classList.remove('hide');
-  $('#parent-dash').classList.add('hide');
-  elParentModal.classList.remove('hide');
-}
-
-$('#btn-pin-enter').onclick = ()=>{
-  const pin = $('#pin-input').value.trim();
-  if (!pin) return;
-  if (S.settings.parentPins.length===0){
-    // no pins yet -> create first
-    S.settings.parentPins = [pin];
-    saveState();
-    $('#pin-msg').textContent = "PIN created.";
-    showDash();
-  } else {
-    if (S.settings.parentPins.includes(pin)){
-      $('#pin-msg').textContent = "Unlocked.";
-      showDash();
-    } else {
-      $('#pin-msg').textContent = "That PIN doesn’t match.";
-    }
-  }
-};
-$('#btn-pin-help').onclick = ()=>{
-  $('#pin-msg').textContent = S.settings.parentPins.length ? 
-   "Tip: you can replace PINs by adding a new one in the dashboard." :
-   "No PIN set yet. Enter one now to create it.";
-};
-
-function showDash(){
-  $('#parent-locked').classList.add('hide');
-  $('#parent-dash').classList.remove('hide');
-  renderProfilesAdmin();
-  renderAreaChips();
-  $('#pin-admin-msg').textContent='';
-}
-
-function renderProfilesAdmin(){
-  const cont = $('#profile-chips'); cont.innerHTML='';
-  Object.keys(S.profiles).forEach(name=>{
-    const d = document.createElement('div');
-    d.className='chip'+(name===getProfileName()?' sel':'');
-    d.textContent=name;
-    d.onclick=()=>{
-      S.activeProfile=name; saveState(); renderProfilesAdmin(); renderHomeBadge();
-    };
-    cont.appendChild(d);
-  });
-}
-$('#btn-add-profile').onclick=()=>{
-  const name = ($('#new-profile-name').value||'').trim();
-  if (!name) return;
-  if (!S.profiles[name]) S.profiles[name]=baseProfile();
-  S.activeProfile=name; saveState(); $('#new-profile-name').value=''; renderProfilesAdmin(); renderHomeBadge();
-};
-$('#btn-del-profile').onclick=()=>{
-  const name = getProfileName();
-  if (name==='Player') { alert('Cannot delete the default profile.'); return; }
-  delete S.profiles[name];
-  S.activeProfile='Player';
-  saveState();
-  renderProfilesAdmin(); renderHomeBadge();
-};
-
-function renderAreaChips(){
-  const cont = $('#area-chips'); cont.innerHTML='';
-  AREAS.forEach(a=>{
-    const d = document.createElement('div');
-    d.className = 'chip'+(S.settings.enabledAreas.includes(a.id)?' sel':'');
-    d.textContent = a.name;
-    d.onclick = ()=>{
-      const set = new Set(S.settings.enabledAreas);
-      if (set.has(a.id)) set.delete(a.id); else set.add(a.id);
-      S.settings.enabledAreas = [...set];
-      saveState(); renderAreaChips();
-    };
-    cont.appendChild(d);
-  });
-}
-$('#btn-all-areas').onclick = ()=>{
-  S.settings.enabledAreas = AREAS.map(a=>a.id);
-  saveState(); renderAreaChips();
-};
-$('#btn-save-areas').onclick = ()=>{ saveState(); alert('Saved. Kids will only see Play.'); };
-
-$('#btn-reset-active').onclick=()=>{
-  const name = getProfileName();
-  S.profiles[name] = { ...baseProfile(), avatar:(S.profiles[name]?.avatar || '😎✨') };
-  saveState(); alert(`Reset progress for ${name}.`);
-};
-
-$('#btn-add-pin').onclick=()=>{
-  const p = ($('#pin-new').value||'').trim();
-  if (!p) return;
-  const set = new Set(S.settings.parentPins);
-  set.add(p); S.settings.parentPins = [...set]; $('#pin-new').value='';
-  saveState(); $('#pin-admin-msg').textContent = `Stored PINs: ${S.settings.parentPins.length}`;
-};
-$('#btn-list-pins').onclick=()=>{
-  $('#pin-admin-msg').textContent = `Stored PINs: ${S.settings.parentPins.length}`;
-};
-$('#btn-clear-pins').onclick=()=>{
-  if (confirm('Remove all stored PINs?')) {
-    S.settings.parentPins=[];
-    saveState();
-    $('#pin-admin-msg').textContent = 'All PINs cleared.';
-  }
-};
-
-/* ----------------------- Home & Profile ----------------------- */
-function $(s){return document.querySelector(s)}
-function $all(s){return [...document.querySelectorAll(s)]}
-
-function renderHomeBadge(){
-  const name = getProfileName();
-  $('#active-profile-badge').textContent = `Active profile: ${name}`;
-}
-renderHomeBadge();
-
-// avatar picker
-$all('#avatars span').forEach(sp=>{
-  const p = activeP();
-  if (sp.textContent===p.avatar) sp.classList.add('sel');
-  sp.onclick=()=>{
-    $all('#avatars span').forEach(x=>x.classList.remove('sel'));
-    sp.classList.add('sel');
-    activeP().avatar = sp.textContent; saveState();
-  };
-});
-
-$('#btn-play').onclick=()=>startSession();
-$('#btn-profile').onclick=()=>{ $('#pAvatar').textContent=activeP().avatar; show('#screen-profile'); };
-$('#btn-play-again').onclick=()=>startSession();
-$('#btn-reset').onclick=()=>{
-  const name=getProfileName();
-  S.profiles[name] = { ...baseProfile(), avatar:(S.profiles[name]?.avatar||'😎✨') };
-  saveState(); alert('Progress reset.');
-};
-
-function show(id){
-  ['#screen-home','#screen-quiz','#screen-profile'].forEach(sel=>$(sel).classList.add('hide'));
-  $(id).classList.remove('hide');
-}
-
-/* ----------------------- Quiz Engine ----------------------- */
-let servedCount = 0;
-let retryQueue = []; // { idx, when }
-let awaitingManualAdvance = false;
-let currentQ = null; // { area,q,a[],e[],correctIdx (after shuffle) }
-
-const RETRY_GAP = 2;
-const POINTS_PER_CORRECT = 10;
-
-$('#btn-exit').onclick=()=>show('#screen-home');
-$('#btn-next').onclick=()=>next(true);
-
-function startSession(){
-  // Dev mode: wipe progress for this run (but still keep avatar/settings)
-  if (DEV_MODE){
-    const name = getProfileName();
-    S.profiles[name] = { ...baseProfile(), avatar:(S.profiles[name]?.avatar || '😎✨') };
-    saveState();
-  }
-  buildPool();
-  servedCount = 0; retryQueue = []; awaitingManualAdvance = false;
-  $('#avatar').textContent = activeP().avatar;
-  renderAreaPill();
-  renderBars();
-  show('#screen-quiz');
-  next(true);
-}
-
-function buildPool(){
-  // Build a list of question indices allowed by enabled areas, then shuffle
-  const enabled = new Set(S.settings.enabledAreas);
-  POOL = Q.map((q,idx)=>({q,idx})).filter(x=>enabled.has(x.q.area));
-  shuffleInPlace(POOL);
-}
-
-let POOL = []; // array of {q, idx}
-
-function pickNextIndex(){
-  // 1) retry ready?
-  const r = retryQueue.findIndex(it => it.when <= servedCount && !isCompleted(it.idx));
-  if (r !== -1) return retryQueue.splice(r,1)[0].idx;
-  // 2) first unseen in pool
-  const unseen = POOL.find(p => !isCompleted(p.idx) && p.idx !== currentQ?.__idx);
-  if (unseen) return unseen.idx;
-  // 3) pending retry not yet ready? serve earliest anyway
-  if (retryQueue.length) return retryQueue[0].idx;
-  // 4) nothing left
-  return -1;
-}
-
-function next(manual=false){
-  if (awaitingManualAdvance && !manual) return; // ignore any stray calls
-  $('#btn-next').disabled = true;
-  $('#feedback').textContent='';
-  const i = pickNextIndex();
-  if (i === -1){
-    // loop forever in dev, else go home
-    if (DEV_MODE){ startSession(); return; }
-    show('#screen-home'); return;
-  }
-  servedCount++;
-  loadQuestion(i);
-}
-
-function loadQuestion(i){
-  const base = Q[i];
-  // shuffle answers while tracking correct
-  const map = [0,1,2,3];
-  shuffleInPlace(map);
-  const shuffledA = map.map(k=>base.a[k]);
-  const shuffledE = map.map(k=>base.e[k]);
-  const correctIdx = map.indexOf(base.c);
-
-  currentQ = {
-    __idx:i,
-    area:base.area,
-    q:base.q,
-    a:shuffledA,
-    e:shuffledE,
-    correctIdx
-  };
-
-  $('#qtext').textContent = currentQ.q;
-  const box = $('#answers'); box.innerHTML='';
-  currentQ.a.forEach((t,i)=>{
-    const d = document.createElement('div');
-    d.className='answer';
-    d.textContent=t;
-    d.onclick = ()=>choose(i, d);
-    box.appendChild(d);
-  });
-  window.scrollTo({top:0, behavior:'smooth'});
-}
-
-function choose(choiceIdx, el){
-  // lock clicks
-  $all('.answer').forEach(a=>a.onclick=null);
-
-  const correct = (choiceIdx === currentQ.correctIdx);
-  const p = activeP();
-
-  if (correct){
-    el.classList.add('correct');
-    markCompleted(currentQ.__idx);
-    p.streak = (p.streak||0)+1;
-    awardPoints(p);
-    $('#feedback').textContent = `✅ Nice. ${currentQ.e[choiceIdx]}`;
-    confetti();
-  } else {
-    el.classList.add('wrong');
-    p.streak = 0;
-    // queue for retry later
-    retryQueue.push({ idx: currentQ.__idx, when: servedCount + RETRY_GAP });
-    // supportive, non-revealing explanation
-    $('#feedback').textContent = `Thanks for thinking it through. ${currentQ.e[choiceIdx]}`;
-  }
-
-  saveState();
-  renderBars();
-  awaitingManualAdvance = true;
-  $('#btn-next').disabled = false;
-}
-
-function renderBars(){
-  const p = activeP();
-  $('#streak').textContent = p.streak||0;
-  $('#xptext').textContent = `XP ${p.xp||0}`;
-  $('#level').textContent = p.level||1;
-  const pct = Math.min(100, (p.xp%100));
-  $('#xpfill').style.width = pct + '%';
-}
-function awardPoints(p){
-  p.xp = (p.xp||0) + POINTS_PER_CORRECT;
-  p.level = 1 + Math.floor((p.xp||0)/100);
-}
-function isCompleted(idx){
-  const p = activeP();
-  return !!p.completed[idx];
-}
-function markCompleted(idx){
-  const p = activeP();
-  p.completed[idx] = true;
-}
-function renderAreaPill(){
-  const enabled = new Set(S.settings.enabledAreas);
-  const names = AREAS.filter(a=>enabled.has(a.id)).map(a=>a.name);
-  $('#pill-areas').textContent = names.length===AREAS.length ? 'All Modes' : names.join(' • ');
-}
-
-/* ----------------------- Utils ----------------------- */
-function shuffleInPlace(arr){
-  for (let i=arr.length-1;i>0;i--){
-    const j = Math.floor(Math.random()*(i+1));
-    [arr[i],arr[j]] = [arr[j],arr[i]];
-  }
-}
-
-/* ----------------------- Confetti ----------------------- */
-function confetti(){
-  const c = $('#confetti');
-  for (let i=0;i<22;i++){
-    const s = document.createElement('span');
-    s.className='piece';
-    s.textContent=['✨','💫','🌟','🎉','⭐'][Math.floor(Math.random()*5)];
-    s.style.left = (Math.random()*100)+'%';
-    s.style.animationDelay = (Math.random()*0.25)+'s';
-    c.appendChild(s);
-    setTimeout(()=>s.remove(),1400);
-  }
-}
-
-/* ----------------------- Boot ----------------------- */
-function boot(){
-  // make sure active profile exists (e.g., ?profile=Zeva)
-  ensureProfile(getProfileName());
-  saveState(); // persist any structural fixes
-  $('#pAvatar').textContent = activeP().avatar;
-  $('#avatar').textContent  = activeP().avatar;
-  renderHomeBadge();
-  show('#screen-home');
-}
-boot();
-</script>
 <!-- Connect to Supabase -->
 <script type="module">
   import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-  // Paste your real keys here:
+  // Paste your own values here:
   const SUPABASE_URL  = 'YOUR_PROJECT_URL_HERE';
   const SUPABASE_ANON = 'YOUR_ANON_KEY_HERE';
 
   const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
-  window.__sb = sb; // makes it visible to your existing script
+  window.__sb = sb;
 
-  // Function to load questions from your Supabase table
   async function fetchBatch(areaIds, limit = 200) {
     const { data, error } = await sb
       .from('questions')
@@ -997,7 +131,6 @@ boot();
       return [];
     }
 
-    // reshape to match your existing format
     return data.map(row => ({
       __id: row.id,
       area: row.area_id,
@@ -1007,9 +140,153 @@ boot();
       c: row.correct_index
     }));
   }
-
   window.fetchBatch = fetchBatch;
+</script>
+
+<script>
+/* ----------------------- Flags & URL helpers ----------------------- */
+const DEV_MODE = location.search.includes('dev=1');
+const RESET_NOW = location.search.includes('reset=1');
+const url = new URL(location.href);
+const PARAM_PROFILE = (url.searchParams.get('profile') || '').trim();
+
+/* ----------------------- Data: Areas ----------------------- */
+const AREAS = [
+  { id:'chill',  name:'Calm & Reset' },
+  { id:'reading',name:'Read the Room' },
+  { id:'follow', name:'Show Up & Follow Through' },
+  { id:'friend', name:'Friendship Moves' },
+];
+const Q = []; // questions now come from Supabase
+
+/* ----------------------- State & Storage ----------------------- */
+const LS_KEY = "cxp_state_v2";
+function defaultState(){
+  return {
+    settings:{ parentPins:[], enabledAreas: AREAS.map(a=>a.id) },
+    profiles:{ "Player": baseProfile() },
+    activeProfile:"Player"
+  };
+}
+function baseProfile(){ return { avatar:'😎✨', xp:0, level:1, streak:0, completed:{}, answeredToday:0 }; }
+let S = loadState();
+function saveState(){ localStorage.setItem(LS_KEY, JSON.stringify(S)); }
+function loadState(){ try{return JSON.parse(localStorage.getItem(LS_KEY)||"null")||defaultState();}catch{return defaultState();} }
+
+/* ----------------------- Helper functions ----------------------- */
+function $(s){return document.querySelector(s)}
+function $all(s){return [...document.querySelectorAll(s)]}
+
+/* ----------------------- Build and play ----------------------- */
+async function buildPool(){
+  const enabled = new Set(S.settings.enabledAreas);
+  const areas = [...enabled];
+  const batch = await window.fetchBatch(areas, 300);
+  POOL = batch.map((q, idx) => ({ q, idx }));
+  shuffleInPlace(POOL);
+}
+
+/* ----------------------- Quiz logic ----------------------- */
+let POOL = [];
+let servedCount = 0;
+let retryQueue = [];
+let awaitingManualAdvance = false;
+let currentQ = null;
+
+const RETRY_GAP = 2;
+const POINTS_PER_CORRECT = 10;
+
+$('#btn-exit').onclick=()=>show('#screen-home');
+$('#btn-next').onclick=()=>next(true);
+
+$('#btn-play').onclick=()=>startSession();
+$('#btn-profile').onclick=()=>{ $('#pAvatar').textContent=activeP().avatar; show('#screen-profile'); };
+$('#btn-play-again').onclick=()=>startSession();
+$('#btn-reset').onclick=()=>{ const n=getProfileName(); S.profiles[n]={...baseProfile(),avatar:S.profiles[n]?.avatar||'😎✨'}; saveState(); alert('Progress reset.'); };
+
+async function startSession(){
+  await buildPool();
+  servedCount=0; retryQueue=[]; awaitingManualAdvance=false;
+  $('#avatar').textContent=activeP().avatar;
+  renderAreaPill(); renderBars();
+  show('#screen-quiz');
+  next(true);
+}
+
+function next(manual=false){
+  if (awaitingManualAdvance && !manual) return;
+  $('#btn-next').disabled=true;
+  $('#feedback').textContent='';
+  const i = servedCount;
+  if (!POOL[i]) { show('#screen-home'); return; }
+  servedCount++;
+  loadQuestion(i);
+}
+
+function loadQuestion(i){
+  const base = POOL[i].q;
+  const map=[0,1,2,3]; shuffleInPlace(map);
+  const shuffledA = map.map(k=>base.a[k]);
+  const shuffledE = map.map(k=>base.e[k]);
+  const correctIdx = map.indexOf(base.c);
+
+  currentQ={__idx:i,area:base.area,q:base.q,a:shuffledA,e:shuffledE,correctIdx};
+  $('#qtext').textContent=currentQ.q;
+  const box=$('#answers'); box.innerHTML='';
+  currentQ.a.forEach((t,ix)=>{
+    const d=document.createElement('div');
+    d.className='answer';
+    d.textContent=t;
+    d.onclick=()=>choose(ix,d);
+    box.appendChild(d);
+  });
+}
+
+function choose(choiceIdx,el){
+  $all('.answer').forEach(a=>a.onclick=null);
+  const correct=(choiceIdx===currentQ.correctIdx);
+  const p=activeP();
+  if(correct){
+    el.classList.add('correct');
+    markCompleted(currentQ.__idx);
+    p.streak=(p.streak||0)+1;
+    awardPoints(p);
+    $('#feedback').textContent=`✅ Nice. ${currentQ.e[choiceIdx]}`;
+    confetti();
+  } else {
+    el.classList.add('wrong');
+    p.streak=0;
+    $('#feedback').textContent=`Thanks for thinking it through. ${currentQ.e[choiceIdx]}`;
+  }
+  saveState(); renderBars(); awaitingManualAdvance=true; $('#btn-next').disabled=false;
+}
+
+/* ----------------------- Render helpers ----------------------- */
+function renderBars(){
+  const p=activeP();
+  $('#streak').textContent=p.streak||0;
+  $('#xptext').textContent=`XP ${p.xp||0}`;
+  $('#level').textContent=p.level||1;
+  const pct=Math.min(100,(p.xp%100));
+  $('#xpfill').style.width=pct+'%';
+}
+function awardPoints(p){p.xp=(p.xp||0)+POINTS_PER_CORRECT;p.level=1+Math.floor((p.xp||0)/100);}
+function renderAreaPill(){
+  const enabled=new Set(S.settings.enabledAreas);
+  const names=AREAS.filter(a=>enabled.has(a.id)).map(a=>a.name);
+  $('#pill-areas').textContent=names.length===AREAS.length?'All Modes':names.join(' • ');
+}
+
+/* ----------------------- Utils ----------------------- */
+function shuffleInPlace(arr){for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}}
+
+/* ----------------------- Profiles (simplified local) ----------------------- */
+function getProfileName(){return S.activeProfile||"Player";}
+function activeP(){const n=getProfileName();if(!S.profiles[n])S.profiles[n]=baseProfile();return S.profiles[n];}
+function markCompleted(idx){const p=activeP();p.completed[idx]=true;}
+function confetti(){const c=$('#confetti')||document.body.appendChild(Object.assign(document.createElement('div'),{id:'confetti',className:'confetti'}));for(let i=0;i<20;i++){const s=document.createElement('span');s.className='piece';s.textContent=['✨','💫','🌟','🎉','⭐'][Math.floor(Math.random()*5)];s.style.left=(Math.random()*100)+'%';s.style.animationDelay=(Math.random()*0.25)+'s';c.appendChild(s);setTimeout(()=>s.remove(),1400);}}
+function show(id){['#screen-home','#screen-quiz','#screen-profile'].forEach(sel=>$(sel).classList.add('hide'));$(id).classList.remove('hide');}
+function boot(){show('#screen-home');}boot();
 </script>
 </body>
 </html>
-
